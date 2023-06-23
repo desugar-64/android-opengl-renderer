@@ -22,6 +22,7 @@ class GraphicsSandbox(private val assetManager: AssetManager) : Layer("GraphicsS
 
     private var cameraController: OrthographicCameraController = OrthographicCameraController(
         aspectRatio = 1.0f,
+        height = 800,
         rotation = true
     )
     private var grassTexture: Texture2D by Delegates.notNull()

@@ -30,10 +30,10 @@ class OpenGLVertexBuffer : VertexBuffer {
         rendererId = ids[0]
         GLES31.glBindBuffer(GLES31.GL_ARRAY_BUFFER, rendererId)
         GLES31.glBufferData(
-            GLES31.GL_ARRAY_BUFFER,
-            sizeBytes,
-            vertices?.toFloatBuffer(),
-            usage
+            /* target = */ GLES31.GL_ARRAY_BUFFER,
+            /* size = */ sizeBytes,
+            /* data = */ vertices?.toFloatBuffer(),
+            /* usage = */ usage
         )
     }
 
@@ -78,10 +78,10 @@ class OpenGLIndexBuffer(indices: IntArray) : IndexBuffer {
         GLES31.glBindBuffer(GLES31.GL_ELEMENT_ARRAY_BUFFER, rendererId)
 
         GLES31.glBufferData(
-            GLES31.GL_ELEMENT_ARRAY_BUFFER,
-            sizeBytes,
-            indices.toIntBuffer(),
-            GLES31.GL_STATIC_DRAW
+            /* target = */ GLES31.GL_ELEMENT_ARRAY_BUFFER,
+            /* size = */ sizeBytes,
+            /* data = */ indices.toIntBuffer(),
+            /* usage = */ GLES31.GL_STATIC_DRAW
         )
     }
 

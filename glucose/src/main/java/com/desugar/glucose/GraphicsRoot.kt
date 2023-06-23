@@ -8,7 +8,7 @@ import com.desugar.glucose.layers.Layer
 import com.desugar.glucose.layers.LayerStack
 import com.desugar.glucose.renderer.Renderer
 
-open class GraphicsApp(
+open class GraphicsRoot(
     private val layerStack: LayerStack = LayerStack(),
     private val assetManager: AssetManager
 ) {

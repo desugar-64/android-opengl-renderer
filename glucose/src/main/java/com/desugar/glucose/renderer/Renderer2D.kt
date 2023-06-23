@@ -42,7 +42,7 @@ object Renderer2D {
             quadVertexArray = squareVA,
             quadVertexBuffer = quadVB,
             textureShader = Shader.create(assetManager, "shader/Texture.glsl"),
-            whiteTexture = Texture2D.create(1, 1)
+            whiteTexture = Texture2D.create(Texture.Specification())
         )
         val whiteTextureData = intArrayOf(Color.WHITE)
         data.whiteTexture.setData(whiteTextureData.toIntBuffer())
@@ -54,10 +54,11 @@ object Renderer2D {
         data.textureSlots.fill(null)
         data.textureSlots[WHITE_TEXTURE_SLOT_INDEX] = data.whiteTexture
 
-        data.quadVertexPositions[0] = Float4(-0.5f, -0.5f, 0.0f, 1.0f)
-        data.quadVertexPositions[1] = Float4(0.5f, -0.5f, 0.0f, 1.0f)
-        data.quadVertexPositions[2] = Float4(0.5f, 0.5f, 0.0f, 1.0f)
-        data.quadVertexPositions[3] = Float4(-0.5f, 0.5f, 0.0f, 1.0f)
+        data.quadVertexPositions[0] = Float4(-0.5f, -0.5f, 0.0f, 1.0f) // BL
+        data.quadVertexPositions[1] = Float4(0.5f, -0.5f, 0.0f, 1.0f)  // BR
+        data.quadVertexPositions[2] = Float4(0.5f, 0.5f, 0.0f, 1.0f)   // TR
+        data.quadVertexPositions[3] = Float4(-0.5f, 0.5f, 0.0f, 1.0f)  // TL
+
     }
 
     fun shutdown() {
@@ -92,6 +93,42 @@ object Renderer2D {
     }
 
     // primitives
+    fun lerp(a: Float, b: Float, t: Float): Float {
+        return a + (b - a) * t
+    }
+    fun drawQuadPx(
+        positionPixels: Float2,
+        sizePixels: Float2,
+        color: Float4,
+        windowWidth: Float,
+        windowHeight: Float,
+        orthographicSize: Float
+    ) {
+
+        // Get the screen aspect ratio
+        val screenAspect = windowWidth / windowHeight
+
+        val sizeNDC = Float2(
+            x = (sizePixels.x / windowWidth) * screenAspect,
+            y = (sizePixels.y / windowHeight)
+        )
+
+        // Convert the position and size from screen space to NDC
+        val positionNDC = Float3(
+            x = lerp(-1f * screenAspect, 1f * screenAspect, (positionPixels.x / windowWidth)),
+            y = lerp(-1f, 1f, (positionPixels.y / windowHeight)),
+            z = 0f
+        ) * orthographicSize * 2f
+
+
+        // Generate the transformation matrix
+        val transform = translation(positionNDC) *
+                scale(Float3(sizeNDC * orthographicSize * 2f, 1.0f))
+
+        // Submit the quad
+        submitQuad(transform, color)
+    }
+
     fun drawQuad(position: Float2, size: Float2, color: Float4) {
         drawQuad(Float3(position, 0.0f), size, color)
     }
@@ -386,13 +423,13 @@ object Renderer2D {
 }
 
 private fun List<QuadVertex>.toVertexFloatArray(): FloatArray {
-/*    val squareVertices = floatArrayOf(
-        // x      y      z   u     v
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // top left
-        0.5f,  0.5f, 0.0f, 1.0f, 1.0f, // top right
-        -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, // bottom right
-    )*/
+    /*    val squareVertices = floatArrayOf(
+            // x      y      z   u     v
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
+            0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // top left
+            0.5f,  0.5f, 0.0f, 1.0f, 1.0f, // top right
+            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, // bottom right
+        )*/
     val verticesData = FloatArray(size * QuadVertex.NUMBER_OF_COMPONENTS)
     var lastVertexIndex = 0
     for (quad in this) {

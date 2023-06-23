@@ -44,6 +44,14 @@ class OpenGLRendererAPI : RendererAPI {
         GLES31.glDisable(GLES31.GL_DEPTH_TEST)
     }
 
+    override fun drawLines(vertexArray: VertexArray, vertexCount: Int) {
+        TODO("Not yet implemented")
+    }
+
+    override fun setLineWidth(width: Float) {
+        TODO("Not yet implemented")
+    }
+
     companion object {
         private const val TAG = "OpenGLRendererAPI"
     }

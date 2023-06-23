@@ -66,42 +66,42 @@ class OpenGLShader : Shader {
         uploadUniformMat4(name, value)
     }
 
-    fun uploadUniformInt(name: String, value: Int) {
+    override fun uploadUniformInt(name: String, value: Int) {
         val location = GLES31.glGetUniformLocation(rendererId, name)
         GLES31.glUniform1i(location, value)
     }
 
-    fun uploadUniformIntArray(name: String, vararg values: Int) {
+    override fun uploadUniformIntArray(name: String, vararg values: Int) {
         val location = GLES31.glGetUniformLocation(rendererId, name)
         GLES31.glUniform1iv(location, values.size, values, 0)
     }
 
-    fun uploadUniformFloat(name: String, value: Float) {
+    override fun uploadUniformFloat(name: String, value: Float) {
         val location = GLES31.glGetUniformLocation(rendererId, name)
         GLES31.glUniform1f(location, value)
     }
 
-    fun uploadUniformFloat2(name: String, value: Float2) {
+    override fun uploadUniformFloat2(name: String, value: Float2) {
         val location = GLES31.glGetUniformLocation(rendererId, name)
         GLES31.glUniform2f(location, value.x, value.y)
     }
 
-    fun uploadUniformFloat3(name: String, value: Float3) {
+    override fun uploadUniformFloat3(name: String, value: Float3) {
         val location = GLES31.glGetUniformLocation(rendererId, name)
         GLES31.glUniform3f(location, value.x, value.y, value.z)
     }
 
-    fun uploadUniformFloat4(name: String, value: Float4) {
+    override fun uploadUniformFloat4(name: String, value: Float4) {
         val location = GLES31.glGetUniformLocation(rendererId, name)
         GLES31.glUniform4f(location, value.x, value.y, value.z, value.w)
     }
 
-    fun uploadUniformMat3(name: String, value: Mat3) {
+    override fun uploadUniformMat3(name: String, value: Mat3) {
         val location = GLES31.glGetUniformLocation(rendererId, name)
         GLES31.glUniformMatrix3fv(location, 1, true, value.toFloatArray(), 0)
     }
 
-    fun uploadUniformMat4(name: String, value: Mat4) {
+    override fun uploadUniformMat4(name: String, value: Mat4) {
         val location = GLES31.glGetUniformLocation(rendererId, name)
         GLES31.glUniformMatrix4fv(location, 1, true, value.toFloatArray(), 0)
     }

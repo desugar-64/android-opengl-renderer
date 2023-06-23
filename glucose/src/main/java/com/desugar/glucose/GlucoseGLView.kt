@@ -2,8 +2,12 @@ package com.desugar.glucose
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.opengl.GLSurfaceView
 import android.util.Log
+import android.util.TypedValue
 import android.view.DragEvent
 import android.view.InputDevice
 import android.view.KeyEvent
@@ -13,8 +17,8 @@ import com.desugar.glucose.ext.activeButton
 import com.desugar.glucose.ext.isFromMouse
 
 @SuppressLint("ViewConstructor")
-class GlucoseGLView(context: Context, val graphicsApp: GraphicsApp) : GLSurfaceView(context) {
-    private val rendererCallback: Renderer = GlucoseGLRenderer(graphicsApp = graphicsApp)
+class GlucoseGLView(context: Context, val graphicsRoot: GraphicsRoot) : GLSurfaceView(context) {
+    private val rendererCallback: Renderer = GlucoseGLRenderer(graphicsRoot = graphicsRoot)
 
     init {
         setEGLContextClientVersion(3)
@@ -24,14 +28,14 @@ class GlucoseGLView(context: Context, val graphicsApp: GraphicsApp) : GLSurfaceV
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         Log.d(TAG, "onKeyDown: $keyCode, ${event.displayLabel}, down:${event.downTime}")
-        graphicsApp.onEvent(KeyPressedEvent(keyCode, event.repeatCount))
+        graphicsRoot.onEvent(KeyPressedEvent(keyCode, event.repeatCount))
         requestRender()
         return true
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         Log.d(TAG, "onKeyUp: $keyCode, ${event.displayLabel}")
-        graphicsApp.onEvent(KeyReleasedEvent(keyCode))
+        graphicsRoot.onEvent(KeyReleasedEvent(keyCode))
         requestRender()
         return super.onKeyUp(keyCode, event)
     }
@@ -44,7 +48,7 @@ class GlucoseGLView(context: Context, val graphicsApp: GraphicsApp) : GLSurfaceV
                 MotionEvent.ACTION_MOVE -> MouseMovedEvent(event.x, event.y)
                 else -> null
             }
-            if (mouseMovedEvent != null) graphicsApp.onEvent(mouseMovedEvent)
+            if (mouseMovedEvent != null) graphicsRoot.onEvent(mouseMovedEvent)
         } else {
             val x = event.x
             val y = event.y
@@ -55,7 +59,7 @@ class GlucoseGLView(context: Context, val graphicsApp: GraphicsApp) : GLSurfaceV
                 MotionEvent.ACTION_MOVE -> TouchMovedEvent(x, y, pointerIndex, pointerId)
                 else -> TouchReleasedEvent(x, y, pointerIndex, pointerId)
             }
-            graphicsApp.onEvent(touchEvent)
+            graphicsRoot.onEvent(touchEvent)
             requestRender()
         }
         return true
@@ -91,7 +95,7 @@ class GlucoseGLView(context: Context, val graphicsApp: GraphicsApp) : GLSurfaceV
                 else -> null
             }
             if (mouseEvent != null) {
-                graphicsApp.onEvent(mouseEvent)
+                graphicsRoot.onEvent(mouseEvent)
             }
 
         }
@@ -137,8 +141,18 @@ class GlucoseGLView(context: Context, val graphicsApp: GraphicsApp) : GLSurfaceV
     }
 
     override fun onDetachedFromWindow() {
-        graphicsApp.onDestroy()
+        graphicsRoot.onDestroy()
         super.onDetachedFromWindow()
+    }
+
+    override fun onDrawForeground(canvas: Canvas) {
+        super.onDrawForeground(canvas)
+        val size = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56f, resources.displayMetrics)
+        val paint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.YELLOW
+        }
+        canvas.drawRect(0f, 0f, size, size, paint)
     }
 
     private companion object {

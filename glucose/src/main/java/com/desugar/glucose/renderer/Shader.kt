@@ -19,6 +19,17 @@ interface Shader {
     fun setMat3(name: String, value: Mat3)
     fun setMat4(name: String, value: Mat4)
 
+    fun uploadUniformInt(name: String, value: Int)
+    fun uploadUniformIntArray(name: String, vararg values: Int)
+
+    fun uploadUniformFloat(name: String, value: Float)
+    fun uploadUniformFloat2(name: String, value: Float2)
+    fun uploadUniformFloat3(name: String, value: Float3)
+    fun uploadUniformFloat4(name: String, value: Float4)
+
+    fun uploadUniformMat3(name: String, value: Mat3)
+    fun uploadUniformMat4(name: String, value: Mat4)
+
     fun destroy()
 
     companion object {

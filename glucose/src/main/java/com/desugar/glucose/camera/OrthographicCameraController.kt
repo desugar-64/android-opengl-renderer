@@ -1,5 +1,6 @@
 package com.desugar.glucose.camera
 
+import android.opengl.Matrix
 import com.desugar.glucose.Input
 import com.desugar.glucose.core.Timestep
 import com.desugar.glucose.events.*
@@ -10,11 +11,12 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 class OrthographicCameraController {
-    val camera: OrthographicCamera
+    var camera: OrthographicCamera
+        private set
     var aspectRatio: Float = 1.0f
         private set
 
-    var zoomLevel: Float = 2.5f
+    var zoomLevel: Float = 1.0f
     var rotation: Boolean = false
         private set
 
@@ -33,18 +35,34 @@ class OrthographicCameraController {
     private var mouseY: Float = 0.0f
     private var viewPortWidth: Int = 0
     private var viewPortHeight: Int = 0
+    private var pixelCoordinates: Boolean = false
+    val orthographicSize: Float
+        get() =  viewPortHeight / 2f / zoomLevel
 
-
-    constructor(aspectRatio: Float, rotation: Boolean) {
+    constructor(aspectRatio: Float, height: Int, rotation: Boolean) {
         this.aspectRatio = aspectRatio
         this.rotation = rotation
+        this.viewPortHeight = height
 
         camera = OrthographicCamera(
-            left = -aspectRatio * zoomLevel,
-            right = aspectRatio * zoomLevel,
-            bottom = -zoomLevel,
-            top = zoomLevel
+            left = -aspectRatio * orthographicSize,
+            right = aspectRatio * orthographicSize,
+            bottom = -orthographicSize,
+            top = orthographicSize
         )
+        onVisibleBoundsResize(width = 0, height = height)
+    }
+
+    constructor(width: Int, height: Int) {
+        disableMovement = true
+        pixelCoordinates = true
+        camera = OrthographicCamera(
+            left = 0f,
+            right = width.toFloat(),
+            bottom = 0f,
+            top =  height.toFloat()
+        )
+        onVisibleBoundsResize(width, height)
     }
 
     fun onUpdate(dt: Timestep) {
@@ -108,23 +126,31 @@ class OrthographicCameraController {
         }
     }
 
-    fun onViewportSizeUpdate(width: Int, height: Int) {
+    fun onVisibleBoundsResize(width: Int, height: Int) {
         viewPortWidth = width
         viewPortHeight = height
-    }
-
-    fun onVisibleBoundsResize(width: Int, height: Int) {
-        aspectRatio = width / height.toFloat()
+        if (width != 0 && height != 0) {
+            aspectRatio = width / height.toFloat()
+        }
         updateCameraProjection()
     }
 
     fun updateCameraProjection() {
-        camera.setProjection(
-            left = -aspectRatio * zoomLevel,
-            right = aspectRatio * zoomLevel,
-            bottom = -zoomLevel,
-            top = zoomLevel
-        )
+        if (pixelCoordinates) {
+            camera.setProjection(
+                left = 0f,
+                right = viewPortWidth.toFloat(),
+                bottom = 0f,
+                top =  viewPortHeight.toFloat()
+            )
+        } else {
+            camera.setProjection(
+                left = -aspectRatio * orthographicSize,
+                right = aspectRatio * orthographicSize,
+                bottom = -orthographicSize,
+                top = orthographicSize
+            )
+        }
     }
 
     private fun onMouseScrolled(event: MouseScrolledEvent): Boolean {

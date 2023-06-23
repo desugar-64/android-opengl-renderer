@@ -18,7 +18,7 @@ class MainActivity : AppCompatActivity() {
         val assetManager: AssetManager = AndroidAssetManager(assets)
         val glView = GlucoseGLView(
             context = this,
-            graphicsApp = SandboxOpenGLApp(assetManager)
+            graphicsRoot = SandboxOpenGLApp(assetManager)
         ).apply {
             fitsSystemWindows = false
             layoutParams = ViewGroup.LayoutParams(

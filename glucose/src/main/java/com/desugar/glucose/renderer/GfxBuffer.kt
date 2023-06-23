@@ -7,7 +7,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-interface Buffer {
+interface GfxBuffer {
     val count: Int
     val sizeBytes: Int
     fun bind()
@@ -61,7 +61,7 @@ class BufferLayout(
 
 }
 
-interface VertexBuffer : Buffer {
+interface VertexBuffer : GfxBuffer {
 
     var layout: BufferLayout?
 
@@ -84,7 +84,7 @@ interface VertexBuffer : Buffer {
     }
 }
 
-interface IndexBuffer : Buffer {
+interface IndexBuffer : GfxBuffer {
 
     companion object {
         fun create(indices: IntArray): IndexBuffer {

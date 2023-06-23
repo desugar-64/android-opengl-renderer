@@ -28,37 +28,12 @@ class AndroidAssetManager(
 
         bmp.copyPixelsToBuffer(pixelsData)
 
-//        val data = pixelsData.array()
-//        val uBytes = IntArray(bmp.width * bmp.height)
-//        var i = 0
-        val hasAlpha = channels > 3
-//        for (byteIndex in data.indices step channels) {
-//            val a: Int = if (hasAlpha) {
-//                data[byteIndex + 0].toInt() and 0xFF
-//            } else {
-//                255
-//            }
-//            val r: Int
-//            val g: Int
-//            val b: Int
-//
-//            if (hasAlpha) {
-//                r = data[byteIndex + 1].toInt() and 0xFF
-//                g = data[byteIndex + 2].toInt() and 0xFF
-//                b = data[byteIndex + 3].toInt() and 0xFF
-//            } else {
-//                r = data[byteIndex + 0].toInt() and 0xFF
-//                g = data[byteIndex + 1].toInt() and 0xFF
-//                b = data[byteIndex + 2].toInt() and 0xFF
-//            }
-//
-//            uBytes[i++] = Color.argb(b, g, r, a)
-//        }
-//        bmp.getPixels(data, 0, bmp.width, 0, 0, bmp.width, bmp.height)
-//        for (idx in data.indices) {
-//
-//        }
-        val pixelMap = PixelMap(bmp.width, bmp.height, channels, pixelsData.rewind() as ByteBuffer)
+        val pixelMap = PixelMap(
+            width = bmp.width,
+            height = bmp.height,
+            channels = channels,
+            pixelData = pixelsData.rewind() as ByteBuffer
+        )
         bmp.recycle()
         return pixelMap
     }
