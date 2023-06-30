@@ -1,6 +1,7 @@
 package com.desugar.glucose.renderer
 
 import com.desugar.glucose.renderer.opengl.OpenGLIndexBuffer
+import com.desugar.glucose.renderer.opengl.OpenGLUniformBuffer
 import com.desugar.glucose.renderer.opengl.OpenGLVertexBuffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -91,6 +92,19 @@ interface IndexBuffer : GfxBuffer {
             return when (Renderer.api) {
                 RendererAPI.API.NONE -> error("Select renderer API")
                 RendererAPI.API.OPENGL -> OpenGLIndexBuffer(indices)
+            }
+        }
+    }
+}
+
+interface UniformBuffer : GfxBuffer {
+    fun setData(data: FloatArray)
+
+    companion object {
+        fun create(count: Int, binding: Int): UniformBuffer {
+            return when (Renderer.api) {
+                RendererAPI.API.NONE -> error("Select renderer API")
+                RendererAPI.API.OPENGL -> OpenGLUniformBuffer(count, binding)
             }
         }
     }

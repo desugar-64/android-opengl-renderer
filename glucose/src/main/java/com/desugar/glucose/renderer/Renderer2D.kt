@@ -41,6 +41,10 @@ object Renderer2D {
         _data = Renderer2DData(
             quadVertexArray = squareVA,
             quadVertexBuffer = quadVB,
+            cameraData = CameraData(Mat4.identity()),
+            uniformBuffer = UniformBuffer.create(
+                Mat4.identity().toFloatArray().size * Float.SIZE_BYTES, 0
+            ),
             textureShader = Shader.create(assetManager, "shader/Texture.glsl"),
             whiteTexture = Texture2D.create(Texture.Specification())
         )
@@ -54,10 +58,10 @@ object Renderer2D {
         data.textureSlots.fill(null)
         data.textureSlots[WHITE_TEXTURE_SLOT_INDEX] = data.whiteTexture
 
-        data.quadVertexPositions[0] = Float4(-0.5f, -0.5f, 0.0f, 1.0f) // BL
-        data.quadVertexPositions[1] = Float4(0.5f, -0.5f, 0.0f, 1.0f)  // BR
-        data.quadVertexPositions[2] = Float4(0.5f, 0.5f, 0.0f, 1.0f)   // TR
-        data.quadVertexPositions[3] = Float4(-0.5f, 0.5f, 0.0f, 1.0f)  // TL
+        data.defaultQuadVertexPositions[0] = Float4(-0.5f, -0.5f, 0.0f, 1.0f) // BL
+        data.defaultQuadVertexPositions[1] = Float4(0.5f, -0.5f, 0.0f, 1.0f)  // BR
+        data.defaultQuadVertexPositions[2] = Float4(0.5f, 0.5f, 0.0f, 1.0f)   // TR
+        data.defaultQuadVertexPositions[3] = Float4(-0.5f, 0.5f, 0.0f, 1.0f)  // TL
 
     }
 
@@ -69,8 +73,8 @@ object Renderer2D {
     }
 
     fun beginScene(camera: OrthographicCamera) {
-        data.textureShader.bind()
-        data.textureShader.setMat4("u_ViewProjection", camera.viewProjectionMatrix)
+        data.cameraData.viewProjection = camera.viewProjectionMatrix
+        data.uniformBuffer.setData(transpose(data.cameraData.viewProjection).toFloatArray())
 
         data.quadIndexCount = 0
         data.quadVertexBufferBase.clear()
@@ -378,7 +382,7 @@ object Renderer2D {
 
         for (i in 0 until 4) {
             data.quadVertexBufferBase += QuadVertex(
-                position = (transform * data.quadVertexPositions[i]).xyz,
+                position = (transform * data.defaultQuadVertexPositions[i]).xyz,
                 texCoord = textureCoords[i],
                 color = color,
                 texIndex = texIndex,
@@ -476,17 +480,21 @@ private data class QuadVertex(
     }
 }
 
+data class CameraData(var viewProjection: Mat4)
+
 @Suppress("ArrayInDataClass")
 private data class Renderer2DData(
     var quadVertexArray: VertexArray,
     var quadVertexBuffer: VertexBuffer,
+    val cameraData: CameraData,
+    val uniformBuffer: UniformBuffer,
     var textureShader: Shader,
     var whiteTexture: Texture2D,
     var quadIndexCount: Int = 0,
     val quadVertexBufferBase: MutableList<QuadVertex> = ArrayList(MAX_VERTICES),
     val textureSlots: Array<Texture2D?> = Array(MAX_TEXTURE_SLOTS) { null },
     var textureSlotIndex: Int = 1, // 0 = white texture slot
-    val quadVertexPositions: Array<Float4> = Array(4) { Float4(0.0f) },
+    val defaultQuadVertexPositions: Array<Float4> = Array(4) { Float4(0.0f) },
     val stats: RenderStatistics = RenderStatistics()
 )
 

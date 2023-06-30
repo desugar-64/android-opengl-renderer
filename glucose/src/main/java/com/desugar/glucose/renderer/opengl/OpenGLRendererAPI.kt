@@ -28,12 +28,14 @@ class OpenGLRendererAPI : RendererAPI {
 
     override fun drawIndexed(vertexArray: VertexArray, indexCount: Int) {
         GLES31.glDrawElements(
-            GLES31.GL_TRIANGLES,
+            /* mode = */ GLES31.GL_TRIANGLES,
+            /* count = */
             if (indexCount == 0) requireNotNull(vertexArray.indexBuffer).count else indexCount,
+            /* type = */
             GLES31.GL_UNSIGNED_INT,
+            /* offset = */
             0
         )
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, 0)
     }
 
     override fun setViewPort(x: Int, y: Int, width: Int, height: Int) {

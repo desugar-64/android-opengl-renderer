@@ -1,6 +1,11 @@
 #type vertex
-#version 300 es
-precision mediump float;
+#version 310 es
+ precision mediump float;
+
+layout (std140, binding = 0) uniform Camera
+{
+mat4 u_ViewProjection;
+};
 
 layout (location = 0) in vec3 a_Position;
 layout (location = 1) in vec2 a_TexCoord;
@@ -9,8 +14,6 @@ layout (location = 3) in float a_TexIndex;
 layout (location = 4) in float a_TilingFactor;
 layout (location = 5) in float a_FlipTexture;
 
-uniform mat4 u_ViewProjection;
-
 out vec2 v_TexCoord;
 out vec4 v_Color;
 out float v_TexIndex;
@@ -18,16 +21,16 @@ out float v_TilingFactor;
 out float v_FlipTexture;
 
 void main() {
-    v_TexCoord = a_TexCoord;
-    v_Color = a_Color;
-    v_TexIndex = a_TexIndex;
-    v_TilingFactor = a_TilingFactor;
-    v_FlipTexture = a_FlipTexture;
-    gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+v_TexCoord = a_TexCoord;
+v_Color = a_Color;
+v_TexIndex = a_TexIndex;
+v_TilingFactor = a_TilingFactor;
+v_FlipTexture = a_FlipTexture;
+gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
 }
 
-    #type fragment
-    #version 300 es
+#type fragment
+    #version 310 es
 //#extension GL_ANDROID_extension_pack_es31a : require
 precision mediump float;
 

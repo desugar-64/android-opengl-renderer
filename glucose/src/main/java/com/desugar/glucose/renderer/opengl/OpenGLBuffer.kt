@@ -6,8 +6,8 @@ import com.desugar.glucose.renderer.*
 //<editor-fold desc="Vertex Buffer">
 class OpenGLVertexBuffer : VertexBuffer {
 
-    override val count: Int
-    override val sizeBytes: Int
+    override var count: Int
+    override var sizeBytes: Int
     override var layout: BufferLayout? = null
     private var rendererId: Int = 0
     private var isDestroyed: Boolean = false
@@ -52,7 +52,8 @@ class OpenGLVertexBuffer : VertexBuffer {
 
     override fun setData(data: FloatArray) {
         bind()
-        val sizeBytes = data.size * Float.SIZE_BYTES
+        this.sizeBytes = data.size * Float.SIZE_BYTES
+        this.count = data.size
         GLES31.glBufferSubData(GLES31.GL_ARRAY_BUFFER, 0, sizeBytes, data.toFloatBuffer())
     }
 
