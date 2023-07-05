@@ -53,9 +53,9 @@ object Renderer2D {
                 layout = BufferLayout {
                     addElement("a_WorldPosition", ShaderDataType.Float3)
                     addElement("a_LocalPosition", ShaderDataType.Float2)
-                    addElement("a_Color", ShaderDataType.Float4)
-                    addElement("a_Thickness", ShaderDataType.Float)
-                    addElement("a_Fade", ShaderDataType.Float)
+                    addElement("a_FillColor", ShaderDataType.Float4)
+                    addElement("a_StrokeColor", ShaderDataType.Float4)
+                    addElement("a_StrokeWidth", ShaderDataType.Float)
                 }
             }
         circleVertexArray.addVertexBuffer(circleVertexBuffer)
@@ -161,18 +161,21 @@ object Renderer2D {
     }
 
     fun drawCircle(
-        transform: Mat4,
-        color: Float4,
-        thickness: Float,
-        fade: Float
+        position: Float2,
+        size: Float2,
+        fillColor: Float4,
+        strokeColor: Float4,
+        strokeWidth: Float
     ) {
+        val transform =
+            translation(Float3(position, 0.0f)) * scale(Float3(size, 1.0f))
         for (i in 0 until 4) {
             val circleVertex = CircleVertex(
                 worldPosition = (transform * data.defaultQuadVertexPositions[i]).xyz,
                 localPosition = (data.defaultQuadVertexPositions[i] * 2.0f).xy,
-                color = color,
-                thickness = thickness,
-                fade = fade
+                fillColor = fillColor,
+                strokeColor = strokeColor,
+                strokeWidth = strokeWidth
             )
             data.circleVertexBufferBase.add(circleVertex)
         }
@@ -517,16 +520,19 @@ private fun List<CircleVertex>.toCircleVertexFloatArray(): FloatArray {
         // localPosition
         verticesData[lastVertexIndex + 3] = circleVertex.localPosition.x
         verticesData[lastVertexIndex + 4] = circleVertex.localPosition.y
-        // color
-        verticesData[lastVertexIndex + 5] = circleVertex.color.r
-        verticesData[lastVertexIndex + 6] = circleVertex.color.g
-        verticesData[lastVertexIndex + 7] = circleVertex.color.b
-        verticesData[lastVertexIndex + 8] = circleVertex.color.a
+        // fillColor
+        verticesData[lastVertexIndex + 5] = circleVertex.fillColor.r
+        verticesData[lastVertexIndex + 6] = circleVertex.fillColor.g
+        verticesData[lastVertexIndex + 7] = circleVertex.fillColor.b
+        verticesData[lastVertexIndex + 8] = circleVertex.fillColor.a
+        // strokeColor
+        verticesData[lastVertexIndex + 9] = circleVertex.strokeColor.r
+        verticesData[lastVertexIndex + 10] = circleVertex.strokeColor.g
+        verticesData[lastVertexIndex + 11] = circleVertex.strokeColor.b
+        verticesData[lastVertexIndex + 12] = circleVertex.strokeColor.a
 
-        // thickness
-        verticesData[lastVertexIndex + 9] = circleVertex.thickness
-        // fade
-        verticesData[lastVertexIndex + 10] = circleVertex.fade
+        // strokeWidth
+        verticesData[lastVertexIndex + 13] = circleVertex.strokeWidth
 
         lastVertexIndex += CircleVertex.NUMBER_OF_COMPONENTS
     }
@@ -590,17 +596,17 @@ private data class QuadVertex(
 private data class CircleVertex(
     val worldPosition: Float3,
     val localPosition: Float2,
-    val color: Float4,
-    val thickness: Float,
-    val fade: Float
+    val fillColor: Float4,
+    val strokeColor: Float4,
+    val strokeWidth: Float
 ) {
     companion object {
         const val NUMBER_OF_COMPONENTS =
             /* worldPosition */ 3 +
                 /* localPosition */ 2 +
-                /* color */ 4 +
-                /* thickness */ 1 +
-                /* fade */ 1
+                /* fillColor */ 4 +
+                /* strokeColor */ 4 +
+                /* strokeWidth */ 1
 
     }
 }

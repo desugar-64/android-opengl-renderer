@@ -140,21 +140,16 @@ class Sandbox2D(
             color = Float4(1f, 0f, 1f, 1f)
         )
         val circleSize = sizePixels * 2f
-        repeat(5) { index ->
-            val transform =
-                translation(
-                    Float3(
-                        x = viewportWidth / 2f,
-                        y = viewportHeight.toFloat() - circleSize.y,
-                        z = 0.0f
-                    ) - Float3(x = circleSize.x, y = circleSize.y * index)
-                ) * scale(Float3(circleSize))
-
+        repeat(15) { index ->
             Renderer2D.drawCircle(
-                transform = transform,
-                color = Float4(0.7f, 0.7f, index.toFloat() / 5, 1.0f),
-                thickness = (1.0f - (index.toFloat() / 5)).coerceAtLeast(0.1f),
-                fade = 0.005f + (index / 7f)
+                position = Float2(
+                    x = viewportWidth / 2f,
+                    y = viewportHeight.toFloat() / 2f + (index * density * 24)
+                ) - Float2(x = circleSize.x, y = circleSize.y),
+                size = circleSize * ((index.toFloat() / 15f) * 1.0f),
+                fillColor = Float4(1.0f, 0.0f, 0.0f, 1.0f),
+                strokeColor = Float4(0.0f, 1.0f, 0.0f, 1.0f),
+                strokeWidth = 0.1f
             )
         }
 
