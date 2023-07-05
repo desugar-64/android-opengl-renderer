@@ -27,6 +27,7 @@ class OpenGLRendererAPI : RendererAPI {
     }
 
     override fun drawIndexed(vertexArray: VertexArray, indexCount: Int) {
+        vertexArray.bind()
         GLES31.glDrawElements(
             /* mode = */ GLES31.GL_TRIANGLES,
             /* count = */

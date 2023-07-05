@@ -27,7 +27,7 @@ class GlucoseGLRenderer(
 
     // The render loop
     override fun onDrawFrame(gl: GL10) {
-        Log.d(TAG, "onDrawFrame: ")
+//        Log.d(TAG, "onDrawFrame: ")
         graphicsRoot.run()
     }
 

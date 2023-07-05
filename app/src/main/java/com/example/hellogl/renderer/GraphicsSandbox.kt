@@ -69,7 +69,7 @@ class GraphicsSandbox(private val assetManager: AssetManager) : Layer("GraphicsS
         shaderLibrary.load(assetManager, "shader/Triangle.glsl")
         shaderLibrary.load(assetManager, "shader/FlatColor.glsl")
 
-        val textureShader = shaderLibrary.load(assetManager, "shader/Texture.glsl")
+        val textureShader = shaderLibrary.load(assetManager, "shader/Renderer2D_Quad.glsl")
 
         grassTexture = Texture2D.create("texture/texture_grass.png", assetManager)
         grassTexture.bind(1)

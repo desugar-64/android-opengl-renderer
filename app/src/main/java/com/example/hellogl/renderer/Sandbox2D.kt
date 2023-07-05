@@ -22,7 +22,8 @@ import com.desugar.glucose.renderer.Texture2D
 import dev.romainguy.kotlin.math.Float2
 import dev.romainguy.kotlin.math.Float3
 import dev.romainguy.kotlin.math.Float4
-import kotlin.math.sin
+import dev.romainguy.kotlin.math.scale
+import dev.romainguy.kotlin.math.translation
 import kotlin.properties.Delegates
 
 
@@ -138,6 +139,25 @@ class Sandbox2D(
             size = sizePixels,
             color = Float4(1f, 0f, 1f, 1f)
         )
+        val circleSize = sizePixels * 2f
+        repeat(5) { index ->
+            val transform =
+                translation(
+                    Float3(
+                        x = viewportWidth / 2f,
+                        y = viewportHeight.toFloat() - circleSize.y,
+                        z = 0.0f
+                    ) - Float3(x = circleSize.x, y = circleSize.y * index)
+                ) * scale(Float3(circleSize))
+
+            Renderer2D.drawCircle(
+                transform = transform,
+                color = Float4(0.7f, 0.7f, index.toFloat() / 5, 1.0f),
+                thickness = (1.0f - (index.toFloat() / 5)).coerceAtLeast(0.1f),
+                fade = 0.005f + (index / 7f)
+            )
+        }
+
         rotation += (30f * dt.seconds)
         Renderer2D.drawRotatedQuad(
             position = Float2(viewportWidth.toFloat(), viewportHeight.toFloat()) - sizePixels / 2f,
@@ -201,7 +221,7 @@ class Sandbox2D(
                 y = 0f
             ),
             size = greenQuadSize / 4f,
-            color = Float4(0f, 1f, 0f, 1.0f)
+            color = Float4(0f, 1f, 1f, 1.0f)
         )
         // Bottom Right
         Renderer2D.drawQuad(
@@ -238,11 +258,11 @@ class Sandbox2D(
     override fun onGuiRender() {
         super.onGuiRender()
         val stats = Renderer2D.renderStats()
-        Log.d(TAG, "Render2D Stats:")
-        Log.d(TAG, "    Draw Calls: ${stats.drawCalls}")
-        Log.d(TAG, "         Quads: ${stats.quadCount}")
-        Log.d(TAG, "      Vertices: ${stats.vertexCount}")
-        Log.d(TAG, "       Indices: ${stats.indexCount}")
+//        Log.d(TAG, "Render2D Stats:")
+//        Log.d(TAG, "    Draw Calls: ${stats.drawCalls}")
+//        Log.d(TAG, "         Quads: ${stats.quadCount}")
+//        Log.d(TAG, "      Vertices: ${stats.vertexCount}")
+//        Log.d(TAG, "       Indices: ${stats.indexCount}")
     }
 
     override fun onEvent(event: Event) {
