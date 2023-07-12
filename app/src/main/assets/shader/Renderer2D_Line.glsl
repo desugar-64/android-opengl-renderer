@@ -11,26 +11,26 @@ layout(location=0)in vec3 a_WorldPosition;
 layout(location=1)in vec2 a_LocalPosition;
 layout(location=2)in vec2 a_Start;
 layout(location=3)in vec2 a_End;
-layout(location=4)in vec4 a_StrokeColor;
-layout(location=5)in float a_StrokeWidth;
+layout(location=4)in vec4 a_Color;
+layout(location=5)in float a_Thickness;
 
 struct VertexOutput
 {
     vec2 LocalPosition;
-    vec2 Start;
-    vec2 End;
-    vec4 StrokeColor;
-    float StrokeWidth;
+    vec2 P0;
+    vec2 P1;
+    vec4 Color;
+    float Thickness;
 };
 
 layout(location=0)out VertexOutput Output;
 
 void main(){
     Output.LocalPosition=a_LocalPosition;
-    Output.Start=a_Start;
-    Output.End=a_End;
-    Output.StrokeColor=a_StrokeColor;
-    Output.StrokeWidth=a_StrokeWidth;
+    Output.P0=a_Start;
+    Output.P1=a_End;
+    Output.Color=a_Color;
+    Output.Thickness=a_Thickness;
     gl_Position=u_ViewProjection*vec4(a_WorldPosition,1.);
 }
 
@@ -42,10 +42,10 @@ precision mediump float;
 struct VertexOutput
 {
     vec2 LocalPosition;
-    vec2 Start;
-    vec2 End;
-    vec4 StrokeColor;
-    float StrokeWidth;
+    vec2 P0;
+    vec2 P1;
+    vec4 Color;
+    float Thickness;
 };
 
 layout(location=0)in VertexOutput Input;
@@ -62,16 +62,19 @@ void main(){
     vec2 uv=Input.LocalPosition;
     
     // Calculate the distance to the line segment
-    float dist=lineSDF(uv,Input.Start,Input.End);
+    float dist=lineSDF(uv,Input.P0,Input.P1);
     
     // Normalize the distance value to the line width
-    float lineDist=dist/Input.StrokeWidth;
-    float aa = fwidth(dist);
+    float lineDist=dist/Input.Thickness;
+    float aa = fwidth(lineDist);
     // Calculate the line edge
-    float lineEdge=smoothstep(aa,-aa,1.-lineDist);
+    float lineEdge=1.0-smoothstep(aa,-aa,1.0-lineDist);
     
     // Output the color
-    vec4 c = vec4(Input.StrokeColor.rgb,lineEdge);
-    c.a *= Input.StrokeColor.a;
+    vec4 c = vec4(Input.Color.rgb,lineEdge);
+    c.a *= Input.Color.a;
+    if (c.a == 0.0) {
+      c = vec4(1.0, 0.0, 1.0, 1.0);
+    }
     color=c;
 }

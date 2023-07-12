@@ -1,7 +1,6 @@
 package com.example.hellogl.renderer
 
 import android.content.res.Resources
-import android.util.Log
 import com.desugar.glucose.assets.AssetManager
 import com.desugar.glucose.camera.OrthographicCameraController
 import com.desugar.glucose.core.Timestep
@@ -22,10 +21,8 @@ import com.desugar.glucose.renderer.Texture2D
 import dev.romainguy.kotlin.math.Float2
 import dev.romainguy.kotlin.math.Float3
 import dev.romainguy.kotlin.math.Float4
-import dev.romainguy.kotlin.math.scale
-import dev.romainguy.kotlin.math.translation
 import kotlin.properties.Delegates
-
+import kotlin.random.Random
 
 class Sandbox2D(
     private val assetManager: AssetManager
@@ -43,10 +40,21 @@ class Sandbox2D(
     private var viewportWidth: Int = 0
     private var viewportHeight: Int = 0
     private var rotation: Float = 0.0f
+    private val random = Random.Default
+    private val lines: MutableList<Float4> = mutableListOf()
+    private val density = Resources.getSystem().displayMetrics.density
 
     override fun onAttach(surfaceWidth: Int, surfaceHeight: Int) {
         viewportWidth = surfaceWidth
         viewportHeight = surfaceHeight
+
+        var startPoint = Float2(random.nextFloat() * viewportWidth, random.nextFloat() * viewportHeight)
+        repeat(5) {
+            val endPoint =
+                Float2(random.nextFloat() * viewportWidth, random.nextFloat() * viewportHeight)
+            lines.add(Float4(startPoint.x, startPoint.y, endPoint.x, endPoint.y))
+            startPoint = endPoint
+       }
 
         viewportCameraController = OrthographicCameraController(
             aspectRatio = surfaceWidth / surfaceHeight.toFloat(),
@@ -131,7 +139,6 @@ class Sandbox2D(
         Renderer2D.drawQuad(Float3(-0.5f, 0.5f, -0.6f), Float2(0.5f, 0.5f), stairsTexture)
         Renderer2D.drawQuad(Float3(0.5f, 0.5f, -0.8f), Float2(0.5f, 0.5f), barrelTexture)
 
-        val density = Resources.getSystem().displayMetrics.density
         val sizePixels = Float2(56f, 56f) * density * offScreenCameraController.zoomLevel
         // top right
         Renderer2D.drawQuad(
@@ -140,15 +147,35 @@ class Sandbox2D(
             color = Float4(1f, 0f, 1f, 1f)
         )
         val circleSize = sizePixels * 2f
-        repeat(15) { index ->
+        repeat(5) { index ->
             Renderer2D.drawCircle(
                 position = Float2(
                     x = viewportWidth / 2f,
                     y = viewportHeight.toFloat() / 2f + (index * density * 24)
                 ) - Float2(x = circleSize.x, y = circleSize.y),
-                size = circleSize * ((index.toFloat() / 15f) * 1.0f),
+                size = circleSize * ((index.toFloat() / 5f) * 1.0f),
                 fillColor = Float4(1.0f, 0.0f, 0.0f, 1.0f),
                 strokeColor = Float4(0.0f, 1.0f, 0.0f, 1.0f),
+                strokeWidth = 0.1f
+            )
+        }
+
+
+        val thickness = 2f * density
+        // Draw lines
+        lines.forEach {
+            val startPoint = Float2(it.x, it.y)
+            Renderer2D.drawLine(
+                start = startPoint,
+                end = Float2(it.z, it.w),
+                color = Float4(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1.0f),
+                thickness = thickness
+            )
+            Renderer2D.drawCircle(
+                position = startPoint,
+                size = Float2(10.0f * density),
+                fillColor = Float4(0.0f, 1.0f, 0.0f, 1.0f),
+                strokeColor = Float4(0.0f, 1.0f, 0.0f, 0.0f),
                 strokeWidth = 0.1f
             )
         }

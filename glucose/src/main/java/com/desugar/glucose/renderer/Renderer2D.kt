@@ -4,6 +4,7 @@ import android.graphics.Color
 import com.desugar.glucose.assets.AssetManager
 import com.desugar.glucose.camera.OrthographicCamera
 import dev.romainguy.kotlin.math.*
+import kotlin.math.atan2
 
 object Renderer2D {
     private var _data: Renderer2DData? = null
@@ -64,6 +65,22 @@ object Renderer2D {
         val circleIndexCount: Int = 0
         val circleVertexBufferBase: MutableList<CircleVertex> = ArrayList(MAX_VERTICES)
 
+        val lineVertexArray = VertexArray.create()
+        val lineVertexBuffer = VertexBuffer.create(MAX_VERTICES * LineVertex.NUMBER_OF_COMPONENTS).apply {
+            layout = BufferLayout {
+                addElement("a_WorldPosition", ShaderDataType.Float3)
+                addElement("a_LocalPosition", ShaderDataType.Float2)
+                addElement("a_Start", ShaderDataType.Float2)
+                addElement("a_End", ShaderDataType.Float2)
+                addElement("a_Color", ShaderDataType.Float4)
+                addElement("a_Thickness", ShaderDataType.Float)
+            }
+        }
+        lineVertexArray.addVertexBuffer(lineVertexBuffer)
+        lineVertexArray.indexBuffer = IndexBuffer.create(quadIndices) // Use quadIndices
+        val lineVertexBufferBase: MutableList<LineVertex> = ArrayList(MAX_VERTICES)
+        val lineShader: Shader = Shader.create(assetManager, "shader/Renderer2D_Line.glsl")
+
         val defaultQuadVertexPositions: Array<Float4> = Array(4) {
             when (it) {
                 0 -> Float4(-0.5f, -0.5f, 0.0f, 1.0f) // BL
@@ -75,7 +92,6 @@ object Renderer2D {
         }
 
         val stats: RenderStatistics = RenderStatistics()
-
 
         val whiteTexture: Texture2D = Texture2D.create(Texture.Specification())
         val textureSlots: Array<Texture2D?> = Array(MAX_TEXTURE_SLOTS) { null }
@@ -95,6 +111,10 @@ object Renderer2D {
             circleShader = circleShader,
             circleIndexCount = circleIndexCount,
             circleVertexBufferBase = circleVertexBufferBase,
+            lineVertexArray = lineVertexArray,
+            lineVertexBuffer = lineVertexBuffer,
+            lineVertexBufferBase = lineVertexBufferBase,
+            lineShader = lineShader,
             textureSlots = textureSlots,
             textureSlotIndex = textureSlotIndex,
             defaultQuadVertexPositions = defaultQuadVertexPositions,
@@ -116,6 +136,7 @@ object Renderer2D {
         data.quadVertexArray.destroy()
         data.circleVertexArray.destroy()
         data.circleShader.destroy()
+        data.lineShader.destroy()
         data.textureSlots.fill(null)
         _data = null
     }
@@ -128,6 +149,8 @@ object Renderer2D {
         data.quadVertexBufferBase.clear()
         data.circleIndexCount = 0
         data.circleVertexBufferBase.clear()
+        data.lineIndexCount = 0
+        data.lineVertexBufferBase.clear()
 
         data.textureSlotIndex = 1
     }
@@ -135,6 +158,7 @@ object Renderer2D {
     fun endScene() {
         data.quadVertexBuffer.setData(data.quadVertexBufferBase.toQuadVertexFloatArray())
         data.circleVertexBuffer.setData(data.circleVertexBufferBase.toCircleVertexFloatArray())
+        data.lineVertexBuffer.setData(data.lineVertexBufferBase.toLineVertexFloatArray())
         flush()
     }
 
@@ -151,6 +175,11 @@ object Renderer2D {
         if (data.circleIndexCount > 0) {
             data.circleShader.bind()
             RenderCommand.drawIndexed(data.circleVertexArray, data.circleIndexCount)
+            data.stats.drawCalls++
+        }
+        if (data.lineIndexCount > 0) {
+            data.lineShader.bind()
+            RenderCommand.drawIndexed(data.lineVertexArray, data.lineIndexCount)
             data.stats.drawCalls++
         }
     }
@@ -181,6 +210,58 @@ object Renderer2D {
         }
         data.circleIndexCount += 6
         data.stats.quadCount++
+    }
+
+    fun drawLine(start: Float2, end: Float2, color: Float4, thickness: Float) {
+//        // Calculate length and angle of line segment
+//        val dx = end.x - start.x
+//        val dy = end.y - start.y
+//        val length = distance(end, start)
+//        val angle = atan2(dy, dx)
+//
+//        // Calculate width and height of quad
+//        val width = length + thickness * abs(cos(angle))
+//        val height = length * abs(sin(angle)) + thickness * abs(cos(angle))
+//
+//        // Calculate position of quad
+//        val px = width / 2 + start.x - thickness / 2 * cos(angle)
+//        val py = height / 2 * sign(sin(angle)) + start.y - thickness / 2 * sin(angle)
+//        val position = Float2(px, py)
+//
+//        val transform =
+//            translation(Float3(position, 0.0f)) * scale(Float3(width, height, 1.0f))
+//        val startX = -2.0f * cos(angle)
+//        val startY = -2.0f * sin(angle)
+//        val endX = 2.0f * cos(angle)
+//        val endY = 2.0f * sin(angle)
+////        val localStart = (start - position) / Float2(width, height) * 2.0f - 1.0f
+////        val localEnd = (end - position) / Float2(width, height) * 2.0f - 1.0f
+//
+//        for (i in 0 until 4) {
+//            val lineVertex = LineVertex(
+//                worldPosition = (transform * data.defaultQuadVertexPositions[i]).xyz,
+//                localPosition = (data.defaultQuadVertexPositions[i] * 2.0f).xy,
+//                p0 = Float2(startX, startY),
+//                p1 = Float2(endX, endY),
+//                color = color,
+//                thickness = thickness
+//            )
+//            data.lineVertexBufferBase.add(lineVertex)
+//        }
+//        data.lineIndexCount += 6
+//        data.stats.quadCount++
+
+        val dx = end.x - start.x
+        val dy = end.y - start.y
+        val length = distance(end, start)
+        val angle = degrees(atan2(dy, dx))
+
+        // Calculate the position and size of the quad
+        val position = Float2((start.x + end.x) / 2, (start.y + end.y) / 2)
+        val size = Float2(length, thickness)
+
+        // Call the drawQuad function with the calculated parameters
+        drawRotatedQuad(position, size, angle, color)
     }
 
     fun drawQuadPx(
@@ -539,6 +620,38 @@ private fun List<CircleVertex>.toCircleVertexFloatArray(): FloatArray {
     return verticesData
 }
 
+private fun List<LineVertex>.toLineVertexFloatArray(): FloatArray {
+    val verticesData = FloatArray(size * LineVertex.NUMBER_OF_COMPONENTS)
+    var lastVertexIndex = 0
+    for (lineVertex in this) {
+        // worldPosition
+        verticesData[lastVertexIndex + 0] = lineVertex.worldPosition.x
+        verticesData[lastVertexIndex + 1] = lineVertex.worldPosition.y
+        verticesData[lastVertexIndex + 2] = lineVertex.worldPosition.z
+        // localPosition
+        verticesData[lastVertexIndex + 3] = lineVertex.localPosition.x
+        verticesData[lastVertexIndex + 4] = lineVertex.localPosition.y
+        // p0
+        verticesData[lastVertexIndex + 5] = lineVertex.p0.x
+        verticesData[lastVertexIndex + 6] = lineVertex.p0.y
+        // p1
+        verticesData[lastVertexIndex + 7] = lineVertex.p1.x
+        verticesData[lastVertexIndex + 8] = lineVertex.p1.y
+
+        // color
+        verticesData[lastVertexIndex + 9] = lineVertex.color.r
+        verticesData[lastVertexIndex + 10] = lineVertex.color.g
+        verticesData[lastVertexIndex + 11] = lineVertex.color.b
+        verticesData[lastVertexIndex + 12] = lineVertex.color.a
+
+        // thickness
+        verticesData[lastVertexIndex + 13] = lineVertex.thickness
+
+        lastVertexIndex += CircleVertex.NUMBER_OF_COMPONENTS
+    }
+    return verticesData
+}
+
 
 private fun List<QuadVertex>.toQuadVertexFloatArray(): FloatArray {
     val verticesData = FloatArray(size * QuadVertex.NUMBER_OF_COMPONENTS)
@@ -568,7 +681,7 @@ private fun List<QuadVertex>.toQuadVertexFloatArray(): FloatArray {
     return verticesData
 }
 
-private const val MAX_QUADS = 100000
+private const val MAX_QUADS = 10000
 private const val MAX_VERTICES = MAX_QUADS * 4
 private const val MAX_INDICES = MAX_QUADS * 6
 private const val MAX_TEXTURE_SLOTS = 8 // TODO: query from actual HW
@@ -611,6 +724,25 @@ private data class CircleVertex(
     }
 }
 
+private data class LineVertex(
+    val worldPosition: Float3,
+    val localPosition: Float2,
+    val p0: Float2,
+    val p1: Float2,
+    val color: Float4,
+    val thickness: Float
+) {
+    companion object {
+        const val NUMBER_OF_COMPONENTS =
+            /* worldPosition */ 3 +
+                /* localPosition */ 2 +
+                /* p0 */ 2 +
+                /* p1 */ 2 +
+                /* color */ 4 +
+                /* thickness */ 1
+    }
+}
+
 data class CameraData(var viewProjection: Mat4)
 
 @Suppress("ArrayInDataClass")
@@ -625,11 +757,17 @@ private data class Renderer2DData(
     var quadIndexCount: Int = 0,
     val quadVertexBufferBase: MutableList<QuadVertex> = ArrayList(MAX_VERTICES),
 
-    var circleVertexArray: VertexArray,
-    var circleVertexBuffer: VertexBuffer,
+    val circleVertexArray: VertexArray,
+    val circleVertexBuffer: VertexBuffer,
     var circleShader: Shader,
     var circleIndexCount: Int = 0,
     val circleVertexBufferBase: MutableList<CircleVertex> = ArrayList(MAX_VERTICES),
+
+    val lineVertexArray: VertexArray,
+    val lineVertexBuffer: VertexBuffer,
+    val lineVertexBufferBase: MutableList<LineVertex> = ArrayList(MAX_VERTICES),
+    val lineShader: Shader,
+    var lineIndexCount: Int = 0,
 
     val textureSlots: Array<Texture2D?> = Array(MAX_TEXTURE_SLOTS) { null },
     var textureSlotIndex: Int = 1, // 0 = white texture slot
