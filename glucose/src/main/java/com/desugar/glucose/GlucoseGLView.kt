@@ -88,10 +88,12 @@ class GlucoseGLView(context: Context, val graphicsRoot: GraphicsRoot) : GLSurfac
                     val button: MouseButton = requireNotNull(event.activeButton)
                     MouseButtonReleasedEvent(button)
                 }
+
                 MotionEvent.ACTION_BUTTON_PRESS -> {
                     val button: MouseButton = requireNotNull(event.activeButton)
                     MouseButtonPressedEvent(button)
                 }
+
                 else -> null
             }
             if (mouseEvent != null) {
@@ -147,12 +149,56 @@ class GlucoseGLView(context: Context, val graphicsRoot: GraphicsRoot) : GLSurfac
 
     override fun onDrawForeground(canvas: Canvas) {
         super.onDrawForeground(canvas)
-        val size = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56f, resources.displayMetrics)
+        val size =
+            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56f, resources.displayMetrics)
         val paint = Paint().apply {
             style = Paint.Style.FILL
             color = Color.YELLOW
+            strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 0.5f, resources.displayMetrics)
         }
         canvas.drawRect(0f, 0f, size, size, paint)
+        canvas.drawCircle(
+            TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                100f,
+                resources.displayMetrics
+            ),
+            height - TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                100f,
+                resources.displayMetrics
+            ),
+            TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                4f,
+                resources.displayMetrics
+            ),
+            paint
+        )
+        paint.color = Color.MAGENTA
+        canvas.drawLine(
+            TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                160f,
+                resources.displayMetrics
+            ),
+            height - TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                100f,
+                resources.displayMetrics
+            ),
+            TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                260f,
+                resources.displayMetrics
+            ),
+            height - TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                440f,
+                resources.displayMetrics
+            ),
+            paint
+        )
     }
 
     private companion object {

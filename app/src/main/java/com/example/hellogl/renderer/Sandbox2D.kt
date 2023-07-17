@@ -49,7 +49,7 @@ class Sandbox2D(
         viewportHeight = surfaceHeight
 
         var startPoint = Float2(random.nextFloat() * viewportWidth, random.nextFloat() * viewportHeight)
-        repeat(5) {
+        repeat(2) {
             val endPoint =
                 Float2(random.nextFloat() * viewportWidth, random.nextFloat() * viewportHeight)
             lines.add(Float4(startPoint.x, startPoint.y, endPoint.x, endPoint.y))
@@ -161,14 +161,23 @@ class Sandbox2D(
         }
 
 
-        val thickness = 2f * density
+        val thickness = 2.5f * density
+
+        Renderer2D.drawAntiAliasedLine(
+            start = Float2(100f) * density,
+            end = Float2(200f, 440f) * density,
+            color = Float4(1.0f, 0.0f, 1.0f, 1.0f),
+            thickness = thickness,
+            aspectRatio = viewportWidth.toFloat() / viewportHeight
+        )
+
         // Draw lines
         lines.forEach {
             val startPoint = Float2(it.x, it.y)
             Renderer2D.drawLine(
                 start = startPoint,
                 end = Float2(it.z, it.w),
-                color = Float4(random.nextFloat(), random.nextFloat(), random.nextFloat(), 1.0f),
+                color = Float4(1.0f, 1.0f, 1.0f, 1.0f),
                 thickness = thickness
             )
             Renderer2D.drawCircle(

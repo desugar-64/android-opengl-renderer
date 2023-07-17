@@ -5,6 +5,8 @@ import com.desugar.glucose.assets.AssetManager
 import com.desugar.glucose.camera.OrthographicCamera
 import dev.romainguy.kotlin.math.*
 import kotlin.math.atan2
+import kotlin.math.max
+import kotlin.math.min
 
 object Renderer2D {
     private var _data: Renderer2DData? = null
@@ -66,16 +68,17 @@ object Renderer2D {
         val circleVertexBufferBase: MutableList<CircleVertex> = ArrayList(MAX_VERTICES)
 
         val lineVertexArray = VertexArray.create()
-        val lineVertexBuffer = VertexBuffer.create(MAX_VERTICES * LineVertex.NUMBER_OF_COMPONENTS).apply {
-            layout = BufferLayout {
-                addElement("a_WorldPosition", ShaderDataType.Float3)
-                addElement("a_LocalPosition", ShaderDataType.Float2)
-                addElement("a_Start", ShaderDataType.Float2)
-                addElement("a_End", ShaderDataType.Float2)
-                addElement("a_Color", ShaderDataType.Float4)
-                addElement("a_Thickness", ShaderDataType.Float)
+        val lineVertexBuffer =
+            VertexBuffer.create(MAX_VERTICES * LineVertex.NUMBER_OF_COMPONENTS).apply {
+                layout = BufferLayout {
+                    addElement("a_WorldPosition", ShaderDataType.Float3)
+                    addElement("a_LocalPosition", ShaderDataType.Float2)
+                    addElement("a_Start", ShaderDataType.Float2)
+                    addElement("a_End", ShaderDataType.Float2)
+                    addElement("a_Color", ShaderDataType.Float4)
+                    addElement("a_Thickness", ShaderDataType.Float)
+                }
             }
-        }
         lineVertexArray.addVertexBuffer(lineVertexBuffer)
         lineVertexArray.indexBuffer = IndexBuffer.create(quadIndices) // Use quadIndices
         val lineVertexBufferBase: MutableList<LineVertex> = ArrayList(MAX_VERTICES)
@@ -212,44 +215,46 @@ object Renderer2D {
         data.stats.quadCount++
     }
 
+    fun drawAntiAliasedLine(start: Float2, end: Float2, color: Float4, thickness: Float, aspectRatio: Float) {
+        val minY = min(start.y, end.x)
+        val maxY = max(start.y, end.y)
+        val height = maxY - minY
+        val midpoint = (start + end) * 0.5f
+
+        val delta = end - start
+        val length = length(delta)
+        val rad = atan2(delta.y, delta.x)
+        val angle = degrees(rad)
+
+        // Define local start and end points for the line
+        val localStart = Float2(-1.0f, 0.0f)
+        val localEnd = Float2(1.0f, 0.0f)
+
+        val aspect = Float2((length / thickness), 1.0f)
+        // Construct the transformation matrix
+        val transform = translation(Float3(midpoint.x, midpoint.y, 0.0f)) *
+                rotation(Z_AXIS, angle) *
+                scale(Float3(length, thickness, 1.0f))
+
+        // Create vertices and add them to the buffer
+        for (i in 0 until 4) {
+            val lineVertex = LineVertex(
+                worldPosition = (transform * data.defaultQuadVertexPositions[i]).xyz,
+                localPosition = (data.defaultQuadVertexPositions[i] * 2.0f).xy/**aspect*/,
+                p0 = localStart/**(aspect.x - 1.0f)*/,
+                p1 = localEnd/**(aspect.x - 1.0f)*/,
+                color = color,
+                thickness = thickness / height
+            )
+            data.lineVertexBufferBase.add(lineVertex)
+        }
+
+        // Update index and quad counts
+        data.lineIndexCount += 6
+        data.stats.quadCount++
+    }
+
     fun drawLine(start: Float2, end: Float2, color: Float4, thickness: Float) {
-//        // Calculate length and angle of line segment
-//        val dx = end.x - start.x
-//        val dy = end.y - start.y
-//        val length = distance(end, start)
-//        val angle = atan2(dy, dx)
-//
-//        // Calculate width and height of quad
-//        val width = length + thickness * abs(cos(angle))
-//        val height = length * abs(sin(angle)) + thickness * abs(cos(angle))
-//
-//        // Calculate position of quad
-//        val px = width / 2 + start.x - thickness / 2 * cos(angle)
-//        val py = height / 2 * sign(sin(angle)) + start.y - thickness / 2 * sin(angle)
-//        val position = Float2(px, py)
-//
-//        val transform =
-//            translation(Float3(position, 0.0f)) * scale(Float3(width, height, 1.0f))
-//        val startX = -2.0f * cos(angle)
-//        val startY = -2.0f * sin(angle)
-//        val endX = 2.0f * cos(angle)
-//        val endY = 2.0f * sin(angle)
-////        val localStart = (start - position) / Float2(width, height) * 2.0f - 1.0f
-////        val localEnd = (end - position) / Float2(width, height) * 2.0f - 1.0f
-//
-//        for (i in 0 until 4) {
-//            val lineVertex = LineVertex(
-//                worldPosition = (transform * data.defaultQuadVertexPositions[i]).xyz,
-//                localPosition = (data.defaultQuadVertexPositions[i] * 2.0f).xy,
-//                p0 = Float2(startX, startY),
-//                p1 = Float2(endX, endY),
-//                color = color,
-//                thickness = thickness
-//            )
-//            data.lineVertexBufferBase.add(lineVertex)
-//        }
-//        data.lineIndexCount += 6
-//        data.stats.quadCount++
 
         val dx = end.x - start.x
         val dy = end.y - start.y

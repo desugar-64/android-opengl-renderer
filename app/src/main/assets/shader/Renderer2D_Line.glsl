@@ -38,7 +38,7 @@ void main(){
 #version 310 es
 //#extension GL_ANDROID_extension_pack_es31a : require
 precision mediump float;
-
+const float gamma = 2.2;
 struct VertexOutput
 {
     vec2 LocalPosition;
@@ -51,30 +51,22 @@ struct VertexOutput
 layout(location=0)in VertexOutput Input;
 layout(location=0)out vec4 color;
 
-float lineSDF(vec2 pos,vec2 a,vec2 b){
-    vec2 pa=pos-a,ba=b-a;
+float udSegment(in vec2 p,in vec2 a,in vec2 b)
+{
+    vec2 ba=b-a;
+    vec2 pa=p-a;
     float h=clamp(dot(pa,ba)/dot(ba,ba),0.,1.);
-    return length(pa-ba*h);
+    return length(pa-h*ba);
 }
 
-void main(){
-    // Normalize the coordinates to keep aspect ratio into account
+void main()
+{
     vec2 uv=Input.LocalPosition;
+    float dist=udSegment(uv,Input.P0,Input.P1);
+    float aa=fwidth(dist);
+    float lineEdge=smoothstep(-aa,aa,1.-dist);
+    vec4 col=Input.Color;
+    col.a*=lineEdge;
     
-    // Calculate the distance to the line segment
-    float dist=lineSDF(uv,Input.P0,Input.P1);
-    
-    // Normalize the distance value to the line width
-    float lineDist=dist/Input.Thickness;
-    float aa = fwidth(lineDist);
-    // Calculate the line edge
-    float lineEdge=1.0-smoothstep(aa,-aa,1.0-lineDist);
-    
-    // Output the color
-    vec4 c = vec4(Input.Color.rgb,lineEdge);
-    c.a *= Input.Color.a;
-    if (c.a == 0.0) {
-      c = vec4(1.0, 0.0, 1.0, 1.0);
-    }
-    color=c;
+    color=vec4(pow(col.rgb, vec3(1.0 / gamma)), col.a);
 }
