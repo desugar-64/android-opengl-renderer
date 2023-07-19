@@ -1,6 +1,7 @@
 package com.desugar.glucose.renderer
 
 import android.graphics.Color
+import com.desugar.glucose.DisplayUtil
 import com.desugar.glucose.assets.AssetManager
 import com.desugar.glucose.camera.OrthographicCamera
 import dev.romainguy.kotlin.math.*
@@ -215,7 +216,7 @@ object Renderer2D {
         data.stats.quadCount++
     }
 
-    fun drawAntiAliasedLine(start: Float2, end: Float2, color: Float4, thickness: Float, aspectRatio: Float) {
+    fun drawAntiAliasedLine(start: Float2, end: Float2, color: Float4, thickness: Float) {
         val minY = min(start.y, end.x)
         val maxY = max(start.y, end.y)
         val height = maxY - minY
@@ -234,7 +235,7 @@ object Renderer2D {
         // Construct the transformation matrix
         val transform = translation(Float3(midpoint.x, midpoint.y, 0.0f)) *
                 rotation(Z_AXIS, angle) *
-                scale(Float3(length, thickness, 1.0f))
+                scale(Float3(length, DisplayUtil.clampToHairline(thickness), 1.0f))
 
         // Create vertices and add them to the buffer
         for (i in 0 until 4) {
@@ -244,7 +245,7 @@ object Renderer2D {
                 p0 = localStart/**(aspect.x - 1.0f)*/,
                 p1 = localEnd/**(aspect.x - 1.0f)*/,
                 color = color,
-                thickness = thickness / height
+                thickness = thickness
             )
             data.lineVertexBufferBase.add(lineVertex)
         }

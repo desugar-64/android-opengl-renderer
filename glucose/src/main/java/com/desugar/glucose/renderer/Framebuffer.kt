@@ -18,7 +18,10 @@ data class FramebufferTextureSpecification(
 )
 
 data class FramebufferAttachmentSpecification(
-    val attachments: List<FramebufferTextureSpecification> = emptyList()
+    val attachments: List<FramebufferTextureSpecification> = listOf(
+        FramebufferTextureSpecification(format = FramebufferTextureFormat.RGBA8),
+        FramebufferTextureSpecification(format = FramebufferTextureFormat.DEPTH24STENCIL8)
+    )
 )
 
 data class FramebufferSpecification(

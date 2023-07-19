@@ -11,8 +11,6 @@ import com.desugar.glucose.layers.Layer
 import com.desugar.glucose.renderer.Framebuffer
 import com.desugar.glucose.renderer.FramebufferAttachmentSpecification
 import com.desugar.glucose.renderer.FramebufferSpecification
-import com.desugar.glucose.renderer.FramebufferTextureFormat
-import com.desugar.glucose.renderer.FramebufferTextureSpecification
 import com.desugar.glucose.renderer.RenderCommand
 import com.desugar.glucose.renderer.Renderer
 import com.desugar.glucose.renderer.Renderer2D
@@ -89,12 +87,7 @@ class Sandbox2D(
         val spec = FramebufferSpecification(
             width = surfaceWidth,
             height = surfaceHeight,
-            attachmentsSpec = FramebufferAttachmentSpecification(
-                listOf(
-                    FramebufferTextureSpecification(format = FramebufferTextureFormat.RGBA8),
-                    FramebufferTextureSpecification(format = FramebufferTextureFormat.DEPTH24STENCIL8)
-                )
-            ),
+            attachmentsSpec = FramebufferAttachmentSpecification(),
         )
         offScreenFramebuffer = Framebuffer.create(spec)
         offScreenCameraController = OrthographicCameraController(
@@ -114,14 +107,14 @@ class Sandbox2D(
 
         Renderer2D.resetRenderStats()
 
-        // draw into our offscreen buffer
+        // draw into our offscreen buffer, also set drawing viewport to framebuffer size
         offScreenFramebuffer.bind()
         RenderCommand.setClearColor(Float4(0.3f, 0.3f, 0.3f, 1.0f))
         RenderCommand.clear()
         Renderer2D.beginScene(offScreenCameraController.camera)
         Renderer2D.drawQuad(
-            Float2(200.0f, 200.0f),
-            Float2(100.8f, 100.8f),
+            Float2(200.0f, 200.0f) * density,
+            Float2(100.8f, 100.8f) * density,
             Float4(0.8f, 0.2f, 0.3f, 1.0f)
         )
         Renderer2D.drawQuad(
@@ -161,14 +154,13 @@ class Sandbox2D(
         }
 
 
-        val thickness = 2.5f * density
+        val thickness = 0.5f * density
 
         Renderer2D.drawAntiAliasedLine(
             start = Float2(100f) * density,
             end = Float2(200f, 440f) * density,
             color = Float4(1.0f, 0.0f, 1.0f, 1.0f),
-            thickness = thickness,
-            aspectRatio = viewportWidth.toFloat() / viewportHeight
+            thickness = thickness
         )
 
         // Draw lines
@@ -218,7 +210,7 @@ class Sandbox2D(
 
         // framebuffer texture
         Renderer2D.drawQuad(
-            Float3(-0.0f, 0.0f, -0.5f),
+            Float3(0.0f, 0.0f, -0.5f),
             Float2(viewportWidth.toFloat(), viewportHeight.toFloat()),
             offScreenFramebuffer.colorAttachmentTexture
         )
