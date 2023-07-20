@@ -1,6 +1,5 @@
 package com.desugar.glucose.camera
 
-import android.opengl.Matrix
 import com.desugar.glucose.Input
 import com.desugar.glucose.core.Timestep
 import com.desugar.glucose.events.*
@@ -18,7 +17,6 @@ class OrthographicCameraController {
 
     var zoomLevel: Float = 1.0f
     var rotation: Boolean = false
-        private set
 
     var disableMovement: Boolean = false
 
@@ -39,9 +37,8 @@ class OrthographicCameraController {
     val orthographicSize: Float
         get() =  viewPortHeight / 2f / zoomLevel
 
-    constructor(aspectRatio: Float, height: Int, rotation: Boolean) {
+    private constructor(aspectRatio: Float, height: Int) {
         this.aspectRatio = aspectRatio
-        this.rotation = rotation
         this.viewPortHeight = height
 
         camera = OrthographicCamera(
@@ -53,7 +50,7 @@ class OrthographicCameraController {
         onVisibleBoundsResize(width = 0, height = height)
     }
 
-    constructor(width: Int, height: Int) {
+    private constructor(width: Int, height: Int) {
         disableMovement = true
         pixelCoordinates = true
         camera = OrthographicCamera(
@@ -127,12 +124,14 @@ class OrthographicCameraController {
     }
 
     fun onVisibleBoundsResize(width: Int, height: Int) {
-        viewPortWidth = width
-        viewPortHeight = height
-        if (width != 0 && height != 0) {
-            aspectRatio = width / height.toFloat()
+        if (width != viewPortWidth || height != viewPortHeight) {
+            viewPortWidth = width
+            viewPortHeight = height
+            if (width != 0 && height != 0) {
+                aspectRatio = width / height.toFloat()
+            }
+            updateCameraProjection()
         }
-        updateCameraProjection()
     }
 
     fun updateCameraProjection() {
@@ -193,6 +192,18 @@ class OrthographicCameraController {
         mouseY = y
         updateCameraProjection()
         return true
+    }
+
+    companion object {
+        fun createPixelUnitsController(
+            viewportWidth: Int,
+            viewportHeight: Int
+        ) = OrthographicCameraController(viewportWidth, viewportHeight)
+
+        fun createWorldUnitsController(
+            viewportWidth: Int,
+            viewportHeight: Int
+        ) = OrthographicCameraController(viewportWidth / viewportHeight.toFloat(), viewportHeight)
     }
 
 }

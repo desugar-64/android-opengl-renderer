@@ -149,6 +149,7 @@ class GlucoseGLView(context: Context, val graphicsRoot: GraphicsRoot) : GLSurfac
 
     override fun onDrawForeground(canvas: Canvas) {
         super.onDrawForeground(canvas)
+        return
         val size =
             TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56f, resources.displayMetrics)
         val paint = Paint().apply {

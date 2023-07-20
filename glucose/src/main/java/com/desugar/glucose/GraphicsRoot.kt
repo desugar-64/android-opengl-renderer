@@ -28,8 +28,10 @@ open class GraphicsRoot(
         val dt = time - lastFrameTime
         lastFrameTime = time
         layerStack.layers.forEach { layer ->
-            layer.onUpdate(Timestep(dt.toFloat()))
-            layer.onGuiRender()
+            if (layer.isVisible) {
+                layer.onUpdate(Timestep(dt.toFloat()))
+                layer.onGuiRender()
+            }
         }
     }
 
@@ -58,6 +60,7 @@ open class GraphicsRoot(
                     mouseEvent.mouseX,
                     mouseEvent.mouseY
                 )
+
                 is MouseScrolledEvent -> mouseInputListener.onMouseScrolled(
                     mouseEvent.offsetX,
                     mouseEvent.offsetY

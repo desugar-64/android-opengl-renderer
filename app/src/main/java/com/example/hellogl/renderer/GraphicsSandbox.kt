@@ -7,6 +7,7 @@ import com.desugar.glucose.events.Event
 import com.desugar.glucose.events.EventDispatcher
 import com.desugar.glucose.events.WindowResizeEvent
 import com.desugar.glucose.layers.Layer
+import com.desugar.glucose.layers.RenderScope
 import com.desugar.glucose.renderer.*
 import dev.romainguy.kotlin.math.Float3
 import dev.romainguy.kotlin.math.Float4
@@ -14,20 +15,16 @@ import dev.romainguy.kotlin.math.scale
 import dev.romainguy.kotlin.math.translation
 import kotlin.properties.Delegates
 
+@Deprecated("")
 class GraphicsSandbox(private val assetManager: AssetManager) : Layer("GraphicsSandbox") {
     private val shaderLibrary = ShaderLibrary()
 
     private var triangleVA: VertexArray by Delegates.notNull()
     private var squareVA: VertexArray by Delegates.notNull()
-
-    private var cameraController: OrthographicCameraController = OrthographicCameraController(
-        aspectRatio = 1.0f,
-        height = 800,
-        rotation = true
-    )
     private var grassTexture: Texture2D by Delegates.notNull()
 
     override fun onAttach(surfaceWidth: Int, surfaceHeight: Int) {
+        super.onAttach(surfaceWidth, surfaceHeight)
         // Vertex Array
         triangleVA = VertexArray.create()
 
@@ -81,7 +78,7 @@ class GraphicsSandbox(private val assetManager: AssetManager) : Layer("GraphicsS
         shaderLibrary.destroyAll()
     }
 
-    override fun onUpdate(dt: Timestep) {
+    override fun RenderScope.onUpdate(dt: Timestep) {
         cameraController.onUpdate(dt)
 
         RenderCommand.setClearColor(Float4(0.1f, 0.1f, 0.1f, 1.0f))
@@ -113,6 +110,7 @@ class GraphicsSandbox(private val assetManager: AssetManager) : Layer("GraphicsS
     }
 
     override fun onEvent(event: Event) {
+        super.onEvent(event)
         cameraController.onEvent(event)
 
         with(EventDispatcher(event)) {
