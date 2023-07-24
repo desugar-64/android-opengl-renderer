@@ -37,7 +37,7 @@ object Renderer2D {
         val quadVertexBuffer: VertexBuffer =
             VertexBuffer.create(MAX_VERTICES * QuadVertex.NUMBER_OF_COMPONENTS).apply {
                 layout = BufferLayout {
-                    addElement("a_Position", ShaderDataType.Float3)
+                    addElement("a_Position", ShaderDataType.Float4)
                     addElement("a_TexCoord", ShaderDataType.Float2)
                     addElement("a_Color", ShaderDataType.Float4)
                     addElement("a_TexIndex", ShaderDataType.Float)
@@ -415,6 +415,42 @@ object Renderer2D {
     }
 
     fun drawRotatedQuad(
+        position: Float3,
+        size: Float2,
+        rotation: Float3,
+        color: Float4,
+        cameraDistance: Float = 3f
+    ) {
+        if (data.quadIndexCount >= MAX_INDICES) {
+            flushAndReset()
+        }
+        val depth = cameraDistance * 72f
+        var cameraDepth = Mat4.identity()
+        if (rotation.x != 0f || rotation.y != 0f) {
+            cameraDepth.set(row = 2, column = 3, v = -1f / depth)
+            cameraDepth.set(row = 2, column = 2, v = 0f)
+            cameraDepth = transpose(cameraDepth)
+        }
+
+        val rotX = if (rotation.x != 0.0f) rotation(X_AXIS, rotation.x) else matId
+        val rotY = if (rotation.y != 0.0f) rotation(Y_AXIS, rotation.y) else matId
+        val rotZ = if (rotation.z != 0.0f) rotation(Z_AXIS, rotation.z) else matId
+
+        var tr = translation(position)
+        tr *= cameraDepth
+        tr *= rotX
+        tr *= rotY
+        tr *= rotZ
+        tr *= scale(Float3(size, 1.0f))
+
+        submitQuad(
+            transform = tr,
+            color = color
+        )
+    }
+
+
+    fun drawRotatedQuad(
         position: Float2,
         size: Float2,
         rotation: Float,
@@ -515,7 +551,7 @@ object Renderer2D {
     }
 
     fun renderStats(): RenderStatistics {
-        return data.stats
+        return if (_data != null) data.stats else RenderStatistics()
     }
 
     private fun flushAndReset() {
@@ -552,7 +588,7 @@ object Renderer2D {
 
         for (i in 0 until 4) {
             data.quadVertexBufferBase += QuadVertex(
-                position = (transform * data.defaultQuadVertexPositions[i]).xyz,
+                position = (transform * data.defaultQuadVertexPositions[i]),
                 texCoord = textureCoords[i],
                 color = color,
                 texIndex = texIndex,
@@ -667,20 +703,21 @@ private fun List<QuadVertex>.toQuadVertexFloatArray(): FloatArray {
         verticesData[lastVertexIndex + 0] = quad.position.x
         verticesData[lastVertexIndex + 1] = quad.position.y
         verticesData[lastVertexIndex + 2] = quad.position.z
+        verticesData[lastVertexIndex + 3] = quad.position.w
         // texture coordinate
-        verticesData[lastVertexIndex + 3] = quad.texCoord.x
-        verticesData[lastVertexIndex + 4] = quad.texCoord.y
+        verticesData[lastVertexIndex + 4] = quad.texCoord.x
+        verticesData[lastVertexIndex + 5] = quad.texCoord.y
         // color
-        verticesData[lastVertexIndex + 5] = quad.color.r
-        verticesData[lastVertexIndex + 6] = quad.color.g
-        verticesData[lastVertexIndex + 7] = quad.color.b
-        verticesData[lastVertexIndex + 8] = quad.color.a
+        verticesData[lastVertexIndex + 6] = quad.color.r
+        verticesData[lastVertexIndex + 7] = quad.color.g
+        verticesData[lastVertexIndex + 8] = quad.color.b
+        verticesData[lastVertexIndex + 9] = quad.color.a
         // texIndex
-        verticesData[lastVertexIndex + 9] = quad.texIndex
+        verticesData[lastVertexIndex + 10] = quad.texIndex
         // a_TilingFactor
-        verticesData[lastVertexIndex + 10] = quad.tilingFactor
+        verticesData[lastVertexIndex + 11] = quad.tilingFactor
         // a_FlipTexture
-        verticesData[lastVertexIndex + 11] = quad.flipTexture
+        verticesData[lastVertexIndex + 12] = quad.flipTexture
 
         lastVertexIndex += QuadVertex.NUMBER_OF_COMPONENTS
     }
@@ -693,7 +730,7 @@ private const val MAX_INDICES = MAX_QUADS * 6
 private const val MAX_TEXTURE_SLOTS = 8 // TODO: query from actual HW
 
 private data class QuadVertex(
-    val position: Float3,
+    val position: Float4,
     val texCoord: Float2,
     val color: Float4,
     val texIndex: Float,
@@ -703,7 +740,7 @@ private data class QuadVertex(
     companion object {
         // must be equal to properties components count
         const val NUMBER_OF_COMPONENTS =
-            /*x,y,z*/ 3 +
+            /*x,y,z, w*/ 4 +
                 /*u,v*/ 2 +
                 /*r,g,b,a*/ 4 +
                 /* texIdx */ 1 +
@@ -783,14 +820,18 @@ private data class Renderer2DData(
 
 data class RenderStatistics(
     var drawCalls: Int = 0,
-    var quadCount: Int = 0
+    var quadCount: Int = 0,
+    var lineCount: Int = 0,
+    var frameTime: Float = 0f
 ) {
-    val vertexCount: Int get() = quadCount * 4
-    val indexCount: Int get() = quadCount * 6
+    val vertexCount: Int get() = (quadCount * 4) + (lineCount * 4)
+    val indexCount: Int get() = quadCount * 6 + (lineCount * 6)
 
     fun reset() {
         drawCalls = 0
         quadCount = 0
+        lineCount = 0
+        frameTime = 0f
     }
 }
 
@@ -800,6 +841,9 @@ private val topRight = Float2(1.0f, 1.0f)
 private val topLeft = Float2(0.0f, 1.0f)
 
 private val whiteColor = Float4(1.0f)
+private val X_AXIS = Float3(1.0f, 0.0f, 0.0f)
+private val Y_AXIS = Float3(0.0f, 1.0f, 0.0f)
 private val Z_AXIS = Float3(0.0f, 0.0f, 1.0f)
+private val matId = Mat4.identity()
 
 private const val WHITE_TEXTURE_SLOT_INDEX = 0

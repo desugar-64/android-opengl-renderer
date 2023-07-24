@@ -22,7 +22,7 @@ class OrthographicCameraController {
 
     private var cameraRotation: Float = 0.0f
 
-    var cameraPosition: Float3 = Float3(Float2(0.0f), -1.0f)
+    var cameraPosition: Float3 = Float3(Float2(0.0f), 1.0f)
     private var cameraTranslationSpeed: Float = 1.0f
 
     private var cameraRotationSpeed: Float = 180.0f

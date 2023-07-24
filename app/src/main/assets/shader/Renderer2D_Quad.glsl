@@ -7,7 +7,7 @@ layout(std140,binding=0)uniform Camera
     mat4 u_ViewProjection;
 };
 
-layout(location=0)in vec3 a_Position;
+layout(location=0)in vec4 a_Position;
 layout(location=1)in vec2 a_TexCoord;
 layout(location=2)in vec4 a_Color;
 layout(location=3)in float a_TexIndex;
@@ -31,7 +31,7 @@ void main(){
     Output.TexIndex=a_TexIndex;
     Output.TilingFactor=a_TilingFactor;
     Output.FlipTexture=a_FlipTexture;
-    gl_Position=u_ViewProjection*vec4(a_Position,1.);
+    gl_Position=u_ViewProjection*a_Position;
 }
 
 #type fragment

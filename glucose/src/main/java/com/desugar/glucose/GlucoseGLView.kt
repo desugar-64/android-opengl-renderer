@@ -2,19 +2,23 @@ package com.desugar.glucose
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.opengl.GLSurfaceView
+import android.text.TextPaint
 import android.util.Log
 import android.util.TypedValue
 import android.view.DragEvent
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import androidx.core.graphics.ColorUtils
 import com.desugar.glucose.events.*
 import com.desugar.glucose.ext.activeButton
 import com.desugar.glucose.ext.isFromMouse
+import com.desugar.glucose.renderer.Renderer2D
 
 @SuppressLint("ViewConstructor")
 class GlucoseGLView(context: Context, val graphicsRoot: GraphicsRoot) : GLSurfaceView(context) {
@@ -147,8 +151,68 @@ class GlucoseGLView(context: Context, val graphicsRoot: GraphicsRoot) : GLSurfac
         super.onDetachedFromWindow()
     }
 
+    fun dpToPx(px: Float): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, px, resources.displayMetrics)
+    }
+
     override fun onDrawForeground(canvas: Canvas) {
         super.onDrawForeground(canvas)
+        return
+        with(canvas) {
+            val debugRectHeight = dpToPx(100f)
+            val debugRectLeft = width - dpToPx(150f)
+            drawRect(
+                /* left = */ debugRectLeft,
+                /* top = */ 0f,
+                /* right = */ width.toFloat(),
+                /* bottom = */ debugRectHeight,
+                /* paint = */ debugRectPaint
+            )
+            val stats = Renderer2D.renderStats()
+            val lines = "Lines: " + stats.lineCount
+            val lineSpacing = dpToPx(4f)
+            drawText(
+                lines,
+                debugRectLeft,
+                debugTextPaint.textSize + lineSpacing,
+                debugTextPaint
+            )
+            val quads = "Quads: " + stats.quadCount
+            drawText(
+                quads,
+                debugRectLeft,
+                debugTextPaint.textSize*2 + lineSpacing*2,
+                debugTextPaint
+            )
+            val vertx = "Vertx: " + stats.vertexCount
+            drawText(
+                vertx,
+                debugRectLeft,
+                debugTextPaint.textSize*3 + lineSpacing*3,
+                debugTextPaint
+            )
+            val indx = "Indx: " + stats.indexCount
+            drawText(
+                indx,
+                debugRectLeft,
+                debugTextPaint.textSize*4 + lineSpacing*4,
+                debugTextPaint
+            )
+            val drawCalls = "Draw Calls: " + stats.drawCalls
+            drawText(
+                drawCalls,
+                debugRectLeft,
+                debugTextPaint.textSize*5 + lineSpacing*5,
+                debugTextPaint
+            )
+            val frameTime = "Frame Time: " + stats.frameTime + "ms"
+            drawText(
+                frameTime,
+                debugRectLeft,
+                debugTextPaint.textSize*6 + lineSpacing*6,
+                debugTextPaint
+            )
+        }
         return
         val size =
             TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 56f, resources.displayMetrics)
@@ -204,5 +268,14 @@ class GlucoseGLView(context: Context, val graphicsRoot: GraphicsRoot) : GLSurfac
 
     private companion object {
         private const val TAG = "GlucoseView"
+        private val debugTextPaint = TextPaint().apply {
+            textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f, Resources.getSystem().displayMetrics)
+            color = Color.WHITE
+            isFakeBoldText = true
+        }
+        private val debugRectPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = ColorUtils.setAlphaComponent(Color.BLACK, 100)
+        }
     }
 }
