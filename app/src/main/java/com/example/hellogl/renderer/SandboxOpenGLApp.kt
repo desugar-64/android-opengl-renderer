@@ -7,9 +7,9 @@ class SandboxOpenGLApp(assetManager: AssetManager) : GraphicsRoot(assetManager =
     init {
 //        pushLayer(GraphicsSandbox(assetManager))
         val sandbox2D = Sandbox2D(assetManager)
-        sandbox2D.isVisible = false
+        sandbox2D.isVisible = true
         val demoLayer = DemoLayer(assetManager)
         pushLayer(sandbox2D)
-        pushLayer(demoLayer)
+//        pushLayer(demoLayer)
     }
 }

@@ -38,11 +38,16 @@ object Renderer2D {
             VertexBuffer.create(MAX_VERTICES * QuadVertex.NUMBER_OF_COMPONENTS).apply {
                 layout = BufferLayout {
                     addElement("a_Position", ShaderDataType.Float4)
+                    addElement("a_LocalPosition", ShaderDataType.Float2)
                     addElement("a_TexCoord", ShaderDataType.Float2)
                     addElement("a_Color", ShaderDataType.Float4)
                     addElement("a_TexIndex", ShaderDataType.Float)
                     addElement("a_TilingFactor", ShaderDataType.Float)
                     addElement("a_FlipTexture", ShaderDataType.Float)
+                    addElement("a_AspectRatio", ShaderDataType.Float)
+                    addElement("a_StrokeWidth", ShaderDataType.Float)
+                    addElement("a_StrokeColor", ShaderDataType.Float4)
+                    addElement("a_CornerRadius", ShaderDataType.Float4)
                 }
             }
         quadVertexArray.addVertexBuffer(quadVertexBuffer)
@@ -270,37 +275,91 @@ object Renderer2D {
         drawRotatedQuad(position, size, angle, color)
     }
 
-    fun drawQuadPx(
-        positionPixels: Float2,
-        sizePixels: Float2,
+    /*
+    * cornerRadius.x = roundness top-right
+    * cornerRadius.y = roundness bottom-right
+    * cornerRadius.z = roundness top-left
+    * cornerRadius.w = roundness bottom-left
+    * */
+    fun drawQuad(
+        position: Float3,
+        size: Float2, // Think about Float3 for depth
         color: Float4,
-        windowWidth: Float,
-        windowHeight: Float,
-        orthographicSize: Float
+        rotation: Float3 = zero3,
+        strokeWidth: Float = 0.0f,
+        strokeColor: Float4 = whiteColor,
+        cornerRadius: Float4 = zero4,
+        cameraDistance: Float = 3f,
+        texture: Texture2D? = null,
+        textureTilingFactor: Float = 1.0f
     ) {
+        if (data.quadIndexCount >= MAX_INDICES) {
+            flushAndReset()
+        }
+        val transform: Mat4
+        if (rotation != zero3) {
+            val depth = cameraDistance * 72f
+            var cameraDepth = matId
+            if (rotation.x != 0f || rotation.y != 0f) { // faking perspective mapping
+                cameraDepth = Mat4.identity()
+                cameraDepth.set(row = 2, column = 3, v = -1f / depth)
+                cameraDepth.set(row = 2, column = 2, v = 0f)
+                cameraDepth = transpose(cameraDepth)
+            }
 
-        // Get the screen aspect ratio
-        val screenAspect = windowWidth / windowHeight
+            val rotX = if (rotation.x != 0.0f) rotation(X_AXIS, rotation.x) else matId
+            val rotY = if (rotation.y != 0.0f) rotation(Y_AXIS, rotation.y) else matId
+            val rotZ = if (rotation.z != 0.0f) rotation(Z_AXIS, rotation.z) else matId
 
-        val sizeNDC = Float2(
-            x = (sizePixels.x / windowWidth) * screenAspect,
-            y = (sizePixels.y / windowHeight)
+            transform = translation(position) *
+                    cameraDepth *
+                    rotX * rotY * rotZ *
+                    scale(Float3(size, 1.0f))
+        } else {
+            transform = translation(position) * scale(Float3(size, 1.0f))
+        }
+
+        var borderWidth = strokeWidth
+        val max = max(size.x, size.y)
+        if (strokeWidth != 0.0f) {
+            borderWidth = strokeWidth / max
+        }
+
+        var corners = cornerRadius
+        if (cornerRadius != zero4) {
+            corners = Float4(
+                x = cornerRadius.x / max, // top-right
+                y = cornerRadius.y / max, // bottom-right
+                z = cornerRadius.z / max, // top-left
+                w = cornerRadius.w / max // bottom-left
+            )
+        }
+        var texIndex = 0.0f
+        var flipTexture = false
+        if (texture != null) {
+            flipTexture = texture.flipTexture
+            var textureIndex = findTextureSlotIndexFor(texture)
+            if (textureIndex == -1) {
+                textureIndex = data.textureSlotIndex
+                data.textureSlots[textureIndex] = texture
+                data.textureSlotIndex++
+            } else {
+                data.textureSlotIndex = textureIndex + 1
+            }
+            texIndex = textureIndex.toFloat()
+        }
+
+        submitQuad(
+            transform = transform,
+            color = color,
+            aspectRatio = size.x / size.y,
+            strokeWidth = borderWidth,
+            strokeColor = strokeColor,
+            cornerRadius = corners,
+            texIndex = texIndex,
+            tilingFactor = textureTilingFactor,
+            flipTexture = if (flipTexture) 1.0f else 0.0f
         )
-
-        // Convert the position and size from screen space to NDC
-        val positionNDC = Float3(
-            x = lerp(-1f * screenAspect, 1f * screenAspect, (positionPixels.x / windowWidth)),
-            y = lerp(-1f, 1f, (positionPixels.y / windowHeight)),
-            z = 0f
-        ) * orthographicSize * 2f
-
-
-        // Generate the transformation matrix
-        val transform = translation(positionNDC) *
-                scale(Float3(sizeNDC * orthographicSize * 2f, 1.0f))
-
-        // Submit the quad
-        submitQuad(transform, color)
     }
 
     fun drawQuad(position: Float2, size: Float2, color: Float4) {
@@ -314,46 +373,47 @@ object Renderer2D {
         }
 
         val transform = translation(position) * scale(Float3(size, 1.0f))
-        submitQuad(transform, color)
+        submitQuad(transform, color, aspectRatio = size.x / size.y)
     }
 
-    fun drawQuad(
-        position: Float2,
-        size: Float2,
-        texture: Texture2D,
-        tintColor: Float4 = Float4(1.0f),
-        tilingFactor: Float = 1.0f
-    ) {
-        drawQuad(Float3(position, 0.0f), size, texture, tintColor, tilingFactor)
-    }
+//    fun drawQuad(
+//        position: Float2,
+//        size: Float2,
+//        texture: Texture2D,
+//        tintColor: Float4 = Float4(1.0f),
+//        tilingFactor: Float = 1.0f
+//    ) {
+//        drawQuad(Float3(position, 0.0f), size, texture, tintColor, tilingFactor)
+//    }
 
-    fun drawQuad(
-        position: Float3,
-        size: Float2,
-        texture: Texture2D,
-        tintColor: Float4 = Float4(1.0f),
-        tilingFactor: Float = 1.0f
-    ) {
-        if (data.quadIndexCount >= MAX_INDICES) {
-            flushAndReset()
-        }
-
-        var textureIndex = findTextureSlotIndexFor(texture)
-        if (textureIndex == -1) {
-            textureIndex = data.textureSlotIndex
-            data.textureSlots[textureIndex] = texture
-            data.textureSlotIndex++
-        } else {
-            data.textureSlotIndex = textureIndex + 1
-        }
-        submitQuad(
-            transform = translation(position) * scale(Float3(size, 1.0f)),
-            color = tintColor,
-            texIndex = textureIndex.toFloat(),
-            tilingFactor = tilingFactor,
-            flipTexture = if (texture.flipTexture) 1.0f else 0.0f
-        )
-    }
+//    fun drawQuad(
+//        position: Float3,
+//        size: Float2,
+//        texture: Texture2D,
+//        tintColor: Float4 = Float4(1.0f),
+//        tilingFactor: Float = 1.0f
+//    ) {
+//        if (data.quadIndexCount >= MAX_INDICES) {
+//            flushAndReset()
+//        }
+//
+//        var textureIndex = findTextureSlotIndexFor(texture)
+//        if (textureIndex == -1) {
+//            textureIndex = data.textureSlotIndex
+//            data.textureSlots[textureIndex] = texture
+//            data.textureSlotIndex++
+//        } else {
+//            data.textureSlotIndex = textureIndex + 1
+//        }
+//        submitQuad(
+//            transform = translation(position) * scale(Float3(size, 1.0f)),
+//            color = tintColor,
+//            texIndex = textureIndex.toFloat(),
+//            tilingFactor = tilingFactor,
+//            flipTexture = if (texture.flipTexture) 1.0f else 0.0f,
+//            aspectRatio = size.x / size.y
+//        )
+//    }
 
     fun drawQuad(
         position: Float2,
@@ -583,17 +643,28 @@ object Renderer2D {
         textureCoords: Array<Float2> = arrayOf(bottomLeft, bottomRight, topRight, topLeft), // CCW
         texIndex: Float = 0.0f, // 0 = white texture
         tilingFactor: Float = 1.0f,
-        flipTexture: Float = 1.0f
+        flipTexture: Float = 1.0f,
+        aspectRatio: Float = 1.0f,
+        strokeWidth: Float = 0.0f,
+        strokeColor: Float4 = whiteColor,
+        cornerRadius: Float4 = zero4
     ) {
 
         for (i in 0 until 4) {
+            val localPosition = (data.defaultQuadVertexPositions[i] * 2.0f).xy
+
             data.quadVertexBufferBase += QuadVertex(
                 position = (transform * data.defaultQuadVertexPositions[i]),
+                localPosition = localPosition,
                 texCoord = textureCoords[i],
                 color = color,
                 texIndex = texIndex,
                 tilingFactor = tilingFactor,
-                flipTexture = flipTexture
+                flipTexture = flipTexture,
+                aspectRatio = aspectRatio,
+                strokeWidth = strokeWidth,
+                strokeColor = strokeColor,
+                cornerRadius = cornerRadius
             )
         }
 
@@ -704,20 +775,37 @@ private fun List<QuadVertex>.toQuadVertexFloatArray(): FloatArray {
         verticesData[lastVertexIndex + 1] = quad.position.y
         verticesData[lastVertexIndex + 2] = quad.position.z
         verticesData[lastVertexIndex + 3] = quad.position.w
+        // a_LocalPosition
+        verticesData[lastVertexIndex + 4] = quad.localPosition.x
+        verticesData[lastVertexIndex + 5] = quad.localPosition.y
         // texture coordinate
-        verticesData[lastVertexIndex + 4] = quad.texCoord.x
-        verticesData[lastVertexIndex + 5] = quad.texCoord.y
+        verticesData[lastVertexIndex + 6] = quad.texCoord.x
+        verticesData[lastVertexIndex + 7] = quad.texCoord.y
         // color
-        verticesData[lastVertexIndex + 6] = quad.color.r
-        verticesData[lastVertexIndex + 7] = quad.color.g
-        verticesData[lastVertexIndex + 8] = quad.color.b
-        verticesData[lastVertexIndex + 9] = quad.color.a
+        verticesData[lastVertexIndex + 8] = quad.color.r
+        verticesData[lastVertexIndex + 9] = quad.color.g
+        verticesData[lastVertexIndex + 10] = quad.color.b
+        verticesData[lastVertexIndex + 11] = quad.color.a
         // texIndex
-        verticesData[lastVertexIndex + 10] = quad.texIndex
+        verticesData[lastVertexIndex + 12] = quad.texIndex
         // a_TilingFactor
-        verticesData[lastVertexIndex + 11] = quad.tilingFactor
+        verticesData[lastVertexIndex + 13] = quad.tilingFactor
         // a_FlipTexture
-        verticesData[lastVertexIndex + 12] = quad.flipTexture
+        verticesData[lastVertexIndex + 14] = quad.flipTexture
+        // aspectRatio
+        verticesData[lastVertexIndex + 15] = quad.aspectRatio
+        // strokeWidth
+        verticesData[lastVertexIndex + 16] = quad.strokeWidth
+        // strokeColor
+        verticesData[lastVertexIndex + 17] = quad.strokeColor.x
+        verticesData[lastVertexIndex + 18] = quad.strokeColor.y
+        verticesData[lastVertexIndex + 19] = quad.strokeColor.z
+        verticesData[lastVertexIndex + 20] = quad.strokeColor.w
+        // cornerRadius
+        verticesData[lastVertexIndex + 21] = quad.cornerRadius.x
+        verticesData[lastVertexIndex + 22] = quad.cornerRadius.y
+        verticesData[lastVertexIndex + 23] = quad.cornerRadius.z
+        verticesData[lastVertexIndex + 24] = quad.cornerRadius.w
 
         lastVertexIndex += QuadVertex.NUMBER_OF_COMPONENTS
     }
@@ -731,21 +819,32 @@ private const val MAX_TEXTURE_SLOTS = 8 // TODO: query from actual HW
 
 private data class QuadVertex(
     val position: Float4,
+    val localPosition: Float2,
     val texCoord: Float2,
     val color: Float4,
     val texIndex: Float,
     val tilingFactor: Float,
-    val flipTexture: Float
+    val flipTexture: Float,
+    val aspectRatio: Float,
+    val strokeWidth: Float,
+    val strokeColor: Float4,
+    val cornerRadius: Float4
 ) {
     companion object {
         // must be equal to properties components count
         const val NUMBER_OF_COMPONENTS =
-            /*x,y,z, w*/ 4 +
-                /*u,v*/ 2 +
-                /*r,g,b,a*/ 4 +
-                /* texIdx */ 1 +
-                /* tiling */ 1 +
-                /* flipTexture */ 1
+                /*position*/ 4 +
+                /*localPosition*/ 2 +
+                /*texCoord*/ 2 +
+                /*color*/ 4 +
+                /* texIndex */ 1 +
+                /* tilingFactor */ 1 +
+                /* flipTexture */ 1 +
+                /* aspectRatio */ 1 +
+                /* strokeWidth */ 1 +
+                /* strokeColor */ 4 +
+                /* cornerRadius */ 4
+
     }
 }
 
@@ -841,6 +940,8 @@ private val topRight = Float2(1.0f, 1.0f)
 private val topLeft = Float2(0.0f, 1.0f)
 
 private val whiteColor = Float4(1.0f)
+private val zero3 = Float3(0.0f)
+private val zero4 = Float4(0.0f)
 private val X_AXIS = Float3(1.0f, 0.0f, 0.0f)
 private val Y_AXIS = Float3(0.0f, 1.0f, 0.0f)
 private val Z_AXIS = Float3(0.0f, 0.0f, 1.0f)

@@ -93,15 +93,26 @@ class DemoLayer(assetManager: AssetManager) : Layer("DemoLayer") {
     context(RenderScope)
     private fun Renderer2D.drawCell0() {
         val rectSize = 72.dpToPx()
-        drawRotatedQuad(
+//        drawRotatedQuad(
+//            position = Float3(
+//                x = cellWidth / 2f,
+//                y = cellHeight / 2f,
+//                z = 0.5f
+//            ),
+//            size = Float2(rectSize),
+//            rotation = Float3(rotationX, 0f, 0f),
+//            color = redColor
+//        )
+        drawQuad(
             position = Float3(
                 x = cellWidth / 2f,
                 y = cellHeight / 2f,
-                z = 0.5f
+                z = 0.0f
             ),
             size = Float2(rectSize),
             rotation = Float3(rotationX, 0f, 0f),
-            color = redColor
+            color = redColor,
+            strokeWidth = 5*density
         )
     }
 

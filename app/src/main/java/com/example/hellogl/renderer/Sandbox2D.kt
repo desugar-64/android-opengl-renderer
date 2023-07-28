@@ -106,15 +106,10 @@ class Sandbox2D(
         RenderCommand.disableDepthTest()
 
         drawQuad(
-            Float3(0.0f, 0.0f, -0.5f),
-            Float2(viewportWidth.toFloat(), viewportHeight.toFloat()),
-            colorAttachmentTexture
-        )
-
-        drawQuad(
-            Float2(-0.2f, 0.2f),
-            Float2(0.5f, 0.75f),
-            Float4(0.2f, 0.3f, 0.8f, 1.0f)
+            position = Float3(0.0f, 0.0f, 0.0f),
+            size = Float2(viewportWidth.toFloat(), viewportHeight.toFloat()),
+            color = Float4(1.0f),
+            texture = colorAttachmentTexture
         )
         val orthographicSize = cameraController.orthographicSize
         val grassSize = Float2(
@@ -123,7 +118,7 @@ class Sandbox2D(
         )
 
         // Top Center
-        val greenQuadSize = Float2(0.3f, 0.3f) * orthographicSize
+        val greenQuadSize = Float2(0.3f, 0.6f) * orthographicSize
         drawQuad(
             position = Float2(
                 x = 0f,
@@ -144,13 +139,15 @@ class Sandbox2D(
         )
         // Bottom Right
         drawQuad(
-            position = Float2(
+            position = Float3(
                 x = orthographicSize * cameraController.aspectRatio - grassSize.x / 2,
-                y = -orthographicSize + grassSize.x / 2
+                y = -orthographicSize + grassSize.x / 2,
+                z = 0.0f
             ),
             size = grassSize,
+            color = Float4(1.0f),
             texture = grassTexture,
-            tilingFactor = 1.0f
+            textureTilingFactor = 1.0f
         )
 
     }
@@ -172,11 +169,12 @@ class Sandbox2D(
         drawQuad(
             position = Float3(300.0f, 300.0f, 0.0f),
             size = Float2(300f, 300f),
+            color = Float4(1.0f),
             texture = grassTexture,
-            tilingFactor = 4.0f
+            strokeWidth = 8 * density,
+            cornerRadius = Float4(32*density),
+            textureTilingFactor = 4.0f
         )
-        drawQuad(Float3(-0.5f, 0.5f, -0.6f), Float2(0.5f, 0.5f), stairsTexture)
-        drawQuad(Float3(0.5f, 0.5f, -0.8f), Float2(0.5f, 0.5f), barrelTexture)
 
         val sizePixels =
             Float2(56f, 56f) * density * offScreenCameraController.zoomLevel
@@ -232,14 +230,17 @@ class Sandbox2D(
         }
 
         rotation += (30f * dt.seconds)
-        drawRotatedQuad(
-            position = Float2(
+        drawQuad(
+            position = Float3(
                 viewportWidth.toFloat(),
-                viewportHeight.toFloat()
+                viewportHeight.toFloat(),
+                0.0f
             ) - sizePixels / 2f,
             size = sizePixels * 0.7f,
             color = Float4(0.1f, 0f, 1f, 1f),
-            rotation = rotation % 360
+            strokeWidth = 8*density,
+            rotation = Float3(z=rotation%360),
+            cameraDistance = 6f
         )
 
         // center
