@@ -41,13 +41,8 @@ class Sandbox2D(
     override fun onAttach(surfaceWidth: Int, surfaceHeight: Int) {
         super.onAttach(surfaceWidth, surfaceHeight)
 
-        var startPoint = Float2(random.nextFloat() * surfaceWidth, random.nextFloat() * surfaceHeight)
-        repeat(2) {
-            val endPoint =
-                Float2(random.nextFloat() * surfaceWidth, random.nextFloat() * surfaceHeight)
-            lines.add(Float4(startPoint.x, startPoint.y, endPoint.x, endPoint.y))
-            startPoint = endPoint
-       }
+        lines.add(Float4(surfaceWidth * 0.3f,surfaceHeight*0.5f, 300f, 300f))
+//        lines.add(Float4(surfaceWidth * 0.6f, surfaceHeight * 0.3f, surfaceWidth * 0.6f, surfaceHeight * 0.6f))
 
         grassTexture = Texture2D.create("texture/texture_grass.png", assetManager)
         val spriteSheetTexture = Texture2D.create("texture/RPGpack_sheet.png", assetManager)
@@ -202,32 +197,10 @@ class Sandbox2D(
         }
 
 
-        val thickness = 0.5f * density
-
-        drawAntiAliasedLine(
-            start = Float2(100f) * density,
-            end = Float2(200f, 440f) * density,
-            color = Float4(1.0f, 0.0f, 1.0f, 1.0f),
-            thickness = thickness
-        )
-
+        val thickness = 8f * density
         // Draw lines
-        lines.forEach {
-            val startPoint = Float2(it.x, it.y)
-            drawLine(
-                start = startPoint,
-                end = Float2(it.z, it.w),
-                color = Float4(1.0f, 1.0f, 1.0f, 1.0f),
-                thickness = thickness
-            )
-            drawCircle(
-                position = startPoint,
-                size = Float2(10.0f * density),
-                fillColor = Float4(0.0f, 1.0f, 0.0f, 1.0f),
-                strokeColor = Float4(0.0f, 1.0f, 0.0f, 0.0f),
-                strokeWidth = 0.1f
-            )
-        }
+        drawLines(lines, Float4(1.0f, 1.0f, 1.0f, 1.0f), thickness)
+        lines.forEach { line -> drawLine(line.xy, Float2(line.z, line.w), Float4(1.0f, 0.0f, 1.0f, 1.0f), 30f) }
 
         rotation += (30f * dt.seconds)
         drawQuad(

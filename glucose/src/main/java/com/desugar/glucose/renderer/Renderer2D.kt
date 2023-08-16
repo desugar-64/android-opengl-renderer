@@ -221,43 +221,47 @@ object Renderer2D {
         data.stats.quadCount++
     }
 
-    fun drawAntiAliasedLine(start: Float2, end: Float2, color: Float4, thickness: Float) {
-        val minY = min(start.y, end.x)
-        val maxY = max(start.y, end.y)
-        val height = maxY - minY
-        val midpoint = (start + end) * 0.5f
+    fun drawLines(points: List<Float4>, color: Float4, thickness: Float) {
+        if (points.isEmpty()) return
 
-        val delta = end - start
-        val length = length(delta)
-        val rad = atan2(delta.y, delta.x)
-        val angle = degrees(rad)
+        for (i in points.indices) {
+            val start = Float2(points[i].x, points[i].y)
+            val end = Float2(points[i].z, points[i].w)
 
-        // Define local start and end points for the line
-        val localStart = Float2(-1.0f, 0.0f)
-        val localEnd = Float2(1.0f, 0.0f)
+            val midpoint = (start + end) * 0.5f
 
-        val aspect = Float2((length / thickness), 1.0f)
-        // Construct the transformation matrix
-        val transform = translation(Float3(midpoint.x, midpoint.y, 0.0f)) *
-                rotation(Z_AXIS, angle) *
-                scale(Float3(length, DisplayUtil.clampToHairline(thickness), 1.0f))
+            val delta = end - start
+            val length = length(delta)
+            val rad = atan2(delta.y, delta.x)
+            val angle = degrees(rad)
 
-        // Create vertices and add them to the buffer
-        for (i in 0 until 4) {
-            val lineVertex = LineVertex(
-                worldPosition = (transform * data.defaultQuadVertexPositions[i]).xyz,
-                localPosition = (data.defaultQuadVertexPositions[i] * 2.0f).xy/**aspect*/,
-                p0 = localStart/**(aspect.x - 1.0f)*/,
-                p1 = localEnd/**(aspect.x - 1.0f)*/,
-                color = color,
-                thickness = thickness
-            )
-            data.lineVertexBufferBase.add(lineVertex)
+            val size = Float3(length, DisplayUtil.clampToHairline(thickness), 1.0f)
+            // Define local start and end points for the line
+            val localStart = Float2(-1.0f, 0.0f)
+            val localEnd = Float2(1.0f, 0.0f)
+
+            // Construct the transformation matrix
+            val transform = translation(Float3(midpoint.x, midpoint.y, 0.0f)) *
+                    rotation(Z_AXIS, angle) *
+                    scale(size)
+
+            // Create vertices and add them to the buffer
+            for (vertex in 0 until 4) {
+                val lineVertex = LineVertex(
+                    worldPosition = (transform * data.defaultQuadVertexPositions[vertex]).xyz,
+                    localPosition = (data.defaultQuadVertexPositions[vertex] * 2.0f).xy,
+                    p0 = localStart,
+                    p1 = localEnd,
+                    color = color,
+                    thickness = thickness
+                )
+                data.lineVertexBufferBase.add(lineVertex)
+            }
+
+            // Update index and quad counts
+            data.lineIndexCount += 6
+            data.stats.quadCount++
         }
-
-        // Update index and quad counts
-        data.lineIndexCount += 6
-        data.stats.quadCount++
     }
 
     fun drawLine(start: Float2, end: Float2, color: Float4, thickness: Float) {
@@ -268,11 +272,16 @@ object Renderer2D {
         val angle = degrees(atan2(dy, dx))
 
         // Calculate the position and size of the quad
-        val position = Float2((start.x + end.x) / 2, (start.y + end.y) / 2)
+        val position = Float3((start.x + end.x) / 2, (start.y + end.y) / 2)
         val size = Float2(length, thickness)
 
         // Call the drawQuad function with the calculated parameters
-        drawRotatedQuad(position, size, angle, color)
+        drawQuad(
+            position = position,
+            size = size,
+            color = color,
+            rotation = Float3(z = angle)
+        )
     }
 
     /*
@@ -833,7 +842,7 @@ private data class QuadVertex(
     companion object {
         // must be equal to properties components count
         const val NUMBER_OF_COMPONENTS =
-                /*position*/ 4 +
+            /*position*/ 4 +
                 /*localPosition*/ 2 +
                 /*texCoord*/ 2 +
                 /*color*/ 4 +

@@ -62,9 +62,11 @@ float udSegment(in vec2 p,in vec2 a,in vec2 b)
 void main()
 {
     vec2 uv=Input.LocalPosition;
-    float dist=udSegment(uv,Input.P0,Input.P1);
+    vec2 start = Input.P0;
+    vec2 end = Input.P1;
+    float dist=udSegment(uv,start,end);
     float aa=fwidth(dist);
-    float lineEdge=smoothstep(-aa,aa,1.-dist);
+    float lineEdge=smoothstep(-aa,aa,1.0-dist);
     vec4 col=Input.Color;
     col.a*=lineEdge;
     
